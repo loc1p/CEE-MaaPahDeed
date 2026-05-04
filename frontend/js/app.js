@@ -106,9 +106,19 @@ const App = {
     document.getElementById('nav-bar').classList.remove('hidden');
     document.getElementById('app').classList.remove('hidden');
     document.getElementById('nav-user').textContent = `◆ ${this.user.username.toUpperCase()}`;
+    this.syncBattleUser();
 
     this.switchMenu('battle');
     this.loadMusicDashboard();
+  },
+
+  syncBattleUser() {
+    const username = this.user && this.user.username ? this.user.username : 'Player';
+    const level = this.user && this.user.level ? this.user.level : 1;
+    const battleUsername = document.getElementById('battle-username');
+    const battleLevel = document.getElementById('battle-level');
+    if (battleUsername) battleUsername.textContent = username;
+    if (battleLevel) battleLevel.textContent = level;
   },
 
   async restoreSession() {
@@ -246,7 +256,7 @@ const App = {
         <span class="song-rank">#${index + 1}</span>
         ${song.coverUrl ? `<img class="song-cover song-cover-sm" src="${this.escapeHtml(song.coverUrl)}" alt="">` : '<div class="song-cover song-cover-sm song-cover-empty">♪</div>'}
         <div class="song-chart-main">
-          <div class="song-chart-label">${this.escapeHtml(song.song)}, <span>${this.escapeHtml(song.artist)}</span></div>
+          <div class="song-chart-label" tabindex="0" data-full-name="${this.escapeHtml(`${song.song}, ${song.artist}`)}">${this.escapeHtml(song.song)}, <span>${this.escapeHtml(song.artist)}</span></div>
           <div class="song-chart-track"><div class="song-chart-fill" style="width:${Math.max(8, Math.round((song.count || 0) / max * 100))}%"></div></div>
         </div>
         <span class="song-count">${song.count || 0}</span>

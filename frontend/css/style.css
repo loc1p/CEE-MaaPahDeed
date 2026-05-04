@@ -21,22 +21,22 @@
 }
 
 body.theme-light {
-  --gold: #9c7414;
-  --gold-dim: #7c641f;
-  --gold-bright: #c99422;
-  --crimson: #b3342a;
-  --neon-green: #167c2f;
-  --neon-blue: #086f9d;
-  --neon-purple: #6840a0;
-  --neon-amber: #b77a00;
-  --neon-red: #bd2f2f;
-  --neon-pink: #b83356;
-  --deep: #f2eee4;
-  --surface: rgba(255, 251, 241, .94);
-  --border-gold: rgba(156, 116, 20, .32);
-  --border-dim: rgba(156, 116, 20, .16);
-  --text: #32283f;
-  --tmid: #786b83;
+  --gold: #8f6a18;
+  --gold-dim: #6f5a24;
+  --gold-bright: #b98628;
+  --crimson: #9f332d;
+  --neon-green: #247345;
+  --neon-blue: #276f91;
+  --neon-purple: #67518f;
+  --neon-amber: #a66f12;
+  --neon-red: #ad3f3b;
+  --neon-pink: #a84463;
+  --deep: #f3eadb;
+  --surface: rgba(255, 250, 239, .94);
+  --border-gold: rgba(143, 106, 24, .28);
+  --border-dim: rgba(143, 106, 24, .15);
+  --text: #2e2638;
+  --tmid: #66586d;
 }
 
 /* ════════════════════════════════════════════════════
@@ -876,10 +876,15 @@ body.theme-light .guitar-guide-meta {
   margin-bottom: 1rem;
 }
 
-.song-dashboard-copy {
+#menu-battle .song-dashboard-copy {
   color: var(--tmid);
-  font-size: .78rem;
-  line-height: 1.5;
+  font-size: 1.28rem;
+  line-height: 1.55;
+}
+
+#menu-battle .song-dashboard-head .section-hd {
+  font-size: 1.35rem;
+  letter-spacing: .14em;
 }
 
 .song-dashboard-grid {
@@ -959,7 +964,7 @@ body.theme-light .song-chart-row {
   background: transparent;
   color: var(--gold);
   font-family: 'Cinzel', serif;
-  font-size: .75rem;
+  font-size: 1rem;
   line-height: 1.35;
   text-align: left;
   cursor: pointer;
@@ -970,7 +975,7 @@ body.theme-light .song-chart-row {
 .song-meta,
 .song-empty {
   color: var(--tmid);
-  font-size: .68rem;
+  font-size: .88rem;
   line-height: 1.45;
 }
 
@@ -981,7 +986,7 @@ body.theme-light .song-chart-row {
   border: 1px solid rgba(212,175,55,.2);
   background: rgba(0,0,0,.18);
   color: #d8c8ed;
-  font-size: .66rem;
+  font-size: .82rem;
   outline: none;
 }
 
@@ -1008,15 +1013,50 @@ body.theme-light .song-chart-row {
 .song-count {
   color: var(--gold);
   font-family: 'Cutive Mono', monospace;
-  font-size: .68rem;
+  font-size: .9rem;
 }
 
 .song-count { text-align: right; }
 
 .song-chart-label {
+  position: relative;
   color: #c8b88a;
-  font-size: .7rem;
+  font-size: 1.14rem;
+  font-weight: 700;
   line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.song-chart-label::after {
+  content: attr(data-full-name);
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 60;
+  width: max-content;
+  max-width: min(420px, 80vw);
+  padding: .55rem .7rem;
+  background: rgba(6,4,14,.96);
+  border: 1px solid rgba(212,175,55,.5);
+  color: #f1e6ff;
+  font-size: .9rem;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: normal;
+  box-shadow: 0 12px 28px rgba(0,0,0,.45);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity .14s ease, transform .14s ease;
+}
+
+.song-chart-label:hover::after,
+.song-chart-label:focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 body.theme-light .song-chart-label {
@@ -1025,6 +1065,8 @@ body.theme-light .song-chart-label {
 
 .song-chart-label span {
   color: var(--tmid);
+  font-size: 1.04rem;
+  font-weight: 600;
 }
 
 .song-chart-track {
@@ -1349,7 +1391,7 @@ body.theme-light .song-chart-label {
 .slbl {
   font-size: 0.65rem;
   letter-spacing: 0.15em;
-  color: #4a3a60; /* สีม่วงเข้มแบบคลาสสิก */
+  color: #9b86bd;
   text-transform: uppercase;
   margin-bottom: 0.2rem;
 }
@@ -1385,7 +1427,7 @@ body.theme-light .song-chart-label {
 .battle-quote {
   font-family: 'IM Fell English', serif;
   font-style: italic;
-  color: #5a4a70;
+  color: #b9a8d2;
   font-size: 1.1rem;
   margin-bottom: 2rem;
 }
@@ -1398,6 +1440,142 @@ body.theme-light .song-chart-label {
   text-shadow: 0 0 25px var(--gold);
   line-height: 1;
   margin: 1rem 0;
+}
+
+#menu-battle {
+  font-family: 'Cormorant Garamond', 'IM Fell English', serif;
+  font-size: 1.08rem;
+  color: #d7cce8;
+}
+
+#menu-battle .section-hd,
+#menu-battle .btn,
+#menu-battle .auth-input,
+#menu-battle .song-link,
+#menu-battle .monster-name,
+#menu-battle .guitar-guide-title {
+  font-family: 'Cinzel', serif;
+  letter-spacing: .06em;
+}
+
+#menu-battle .battle-quote,
+#menu-battle .monster-lore,
+#menu-battle .quest-desc,
+#menu-battle .battle-feedback,
+#menu-battle .battle-log,
+#menu-battle .song-dashboard-copy,
+#menu-battle .song-meta,
+#menu-battle .chord-analysis-meta {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+}
+
+#menu-battle .slbl {
+  font-size: .78rem;
+  color: #b8a6d4;
+}
+
+#menu-battle .sval {
+  color: #ead9ad;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.28rem;
+  font-weight: 700;
+}
+
+#menu-battle .target-display,
+#menu-battle .det-display {
+  font-family: 'Cinzel Decorative', serif;
+  letter-spacing: 0;
+}
+
+#menu-battle .monster-name,
+#menu-battle .quest-title,
+#menu-battle .chord-analysis-title {
+  font-size: 1.08rem;
+  color: #ead08a;
+}
+
+#menu-battle .monster-lore,
+#menu-battle .quest-desc,
+#menu-battle .target-hz,
+#menu-battle .song-dashboard-copy,
+#menu-battle .song-meta,
+#menu-battle .chord-analysis-meta {
+  font-size: .9rem;
+  color: #b9abc9;
+}
+
+#menu-battle .battle-feedback {
+  font-size: 1.08rem;
+  color: #efe1bd;
+  background: rgba(7, 5, 15, .42);
+}
+
+#menu-battle .auth-input {
+  color: #ead08a;
+  letter-spacing: .08em;
+  font-size: 1.08rem;
+}
+
+#menu-battle .auth-input::placeholder {
+  color: #9787ab;
+}
+
+body.theme-light #menu-battle {
+  color: #332a3b;
+}
+
+body.theme-light #menu-battle .panel,
+body.theme-light #menu-battle .battle-readout,
+body.theme-light #menu-battle .battle-feedback,
+body.theme-light #menu-battle .chord-analysis,
+body.theme-light #menu-battle .song-mini-card,
+body.theme-light #menu-battle .song-chart-row {
+  background: rgba(255, 249, 237, .9);
+  border-color: rgba(143,106,24,.24);
+  box-shadow: 0 12px 26px rgba(88,64,32,.07);
+}
+
+body.theme-light #menu-battle .slbl,
+body.theme-light #menu-battle .battle-quote,
+body.theme-light #menu-battle .battle-log,
+body.theme-light #menu-battle .target-hz,
+body.theme-light #menu-battle .song-dashboard-copy,
+body.theme-light #menu-battle .song-meta,
+body.theme-light #menu-battle .chord-analysis-meta,
+body.theme-light #menu-battle .quest-desc,
+body.theme-light #menu-battle .monster-lore {
+  color: #65596d;
+}
+
+body.theme-light #menu-battle .sval,
+body.theme-light #menu-battle .battle-feedback {
+  color: #423548;
+}
+
+body.theme-light #menu-battle .target-display,
+body.theme-light #menu-battle .det-display,
+body.theme-light #menu-battle .monster-name,
+body.theme-light #menu-battle .quest-title,
+body.theme-light #menu-battle .chord-analysis-title,
+body.theme-light #menu-battle .song-link {
+  color: #7d5f1f;
+  text-shadow: none;
+}
+
+body.theme-light #menu-battle .det-display.matched,
+body.theme-light #menu-battle .acg {
+  color: #247345;
+  text-shadow: none;
+}
+
+body.theme-light #menu-battle .auth-input {
+  background: rgba(255,255,255,.56);
+  color: #423548;
+}
+
+body.theme-light #menu-battle .auth-input::placeholder {
+  color: #7f7387;
 }
 
 /* Utility */
