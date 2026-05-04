@@ -38,9 +38,7 @@
 <nav id="nav-bar" class="hidden">
   <span class="nav-logo">◆ MaaPahDeed</span>
   <button class="nav-btn active" data-menu="battle"    onclick="App.switchMenu('battle')">⚔ Battle</button>
-  <button class="nav-btn"        data-menu="guitar"    onclick="App.switchMenu('guitar')">🎸 Lead Guitar</button>
   <button class="nav-btn"        data-menu="camera"    onclick="App.switchMenu('camera')">📷 Chord Cam</button>
-  <button class="nav-btn"        data-menu="game"      onclick="App.switchMenu('game')">🎮 Rhythm Quest</button>
   <span class="nav-spacer"></span>
   <span class="nav-user" id="nav-user"></span>
   <button class="nav-logout" onclick="App.logout()">LOG OUT</button>
@@ -146,100 +144,6 @@
     </div>
   </section>
 
-  <!-- ─── GUITAR (Lead + Tab) ─── -->
-  <section id="menu-guitar" class="menu-section">
-    <div class="inst-layout">
-      <div>
-        <div class="section-hd">🎸 Lead Guitar — Interactive Fretboard</div>
-        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.8rem">
-          <span class="slbl">Scale:</span>
-          <select id="fb-scale" class="fb-sel" onchange="Guitar.renderFretboard()">
-            <option value="pentatonic-minor">Minor Pentatonic</option>
-            <option value="major">Major</option>
-            <option value="blues">Blues</option>
-            <option value="dorian">Dorian</option>
-            <option value="lydian">Lydian</option>
-          </select>
-          <span class="slbl">Root:</span>
-          <select id="fb-root" class="fb-sel" onchange="Guitar.renderFretboard()">
-            <option>A</option><option>A#</option><option>B</option><option>C</option><option>C#</option>
-            <option>D</option><option>D#</option><option>E</option><option>F</option><option>F#</option><option>G</option><option>G#</option>
-          </select>
-        </div>
-        <div class="fretboard-wrap" id="fretboard-container"></div>
-
-        <div class="section-hd" style="margin-top:1.2rem">Upload MP3 → AI Tab Generator</div>
-        <div class="upload-zone" id="upload-zone" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="Guitar.handleDrop(event)" onclick="document.getElementById('mp3-file').click()">
-          <div id="upload-zone-inner">
-            <span style="font-size:2rem">🎵</span><br>
-            Drop MP3/WAV here — or click to browse<br>
-            <span style="font-size:.72rem;color:var(--tmid)">AI analyzes pitch and generates scrolling guitar tab</span>
-          </div>
-          <input type="file" id="mp3-file" class="hidden" accept="audio/*" onchange="Guitar.handleFileSelect(this.files[0])">
-        </div>
-        <div id="upload-loading" class="hidden" style="text-align:center;padding:1rem">
-          <div class="spinner"></div>
-          <div class="slbl" style="animation:goldP 1.5s infinite" id="upload-prog">Analyzing audio…</div>
-        </div>
-        <div id="tab-container" class="hidden">
-          <audio id="tab-audio" controls style="width:100%;margin-bottom:.5rem;filter:sepia(.5)"></audio>
-          <!-- 2-line rolling tab view -->
-          <div class="rolling-tab-outer">
-            <div class="rolling-tab-stage" id="tab-stage">
-              <div class="rolling-tab-scroll" id="tab-scroll"></div>
-            </div>
-          </div>
-          <!-- Practice bar -->
-          <div id="practice-bar" class="practice-bar">
-            <div id="practice-idle">
-              <button class="btn btn-green" onclick="Guitar.startPractice()">🎤 Practice Mode</button>
-              <button class="btn btn-gold btn-sm" onclick="Guitar.skipAll()">⏭ Skip All</button>
-            </div>
-            <div id="practice-active" class="hidden">
-              <div class="practice-status">
-                <div class="practice-state-chip" id="prac-chip">◉ LISTEN</div>
-                <span>Target: <strong id="prac-target-note">—</strong> S<span id="prac-string">?</span> F<span id="prac-fret">?</span></span>
-                <span class="detected-badge" id="prac-detected">Mic: –</span>
-                <span id="prac-progress">0 / 0</span>
-              </div>
-              <div style="display:flex;gap:.4rem;flex-wrap:wrap">
-                <button class="btn btn-gold btn-sm" onclick="Guitar.pracHearNote()">▶ Hear</button>
-                <button class="btn btn-gold btn-sm" onclick="Guitar.skipSection()">⏭ Skip §</button>
-                <button class="btn btn-gold btn-sm" onclick="Guitar.skipAll()">⏭ Skip All</button>
-                <button class="btn btn-red btn-sm"  onclick="Guitar.stopPractice()">■ Stop</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- AI key suggest display -->
-        <div id="key-suggest-panel" class="hidden analysis-box mt-2">
-          <div class="section-hd">AI Key Analysis</div>
-          <div id="key-suggest-results"></div>
-        </div>
-      </div>
-
-      <aside>
-        <div class="panel"><div class="p-inner">
-          <div class="section-hd">Quick Chords</div>
-          <div class="chord-grid" id="guitar-chords"></div>
-          <div class="hr"></div>
-          <div class="section-hd">Lick Library</div>
-          <div id="lick-list"></div>
-          <div class="hr"></div>
-          <div class="section-hd">Mic Monitor</div>
-          <div class="viz-wrap" id="guitar-viz"></div>
-          <div style="display:flex;align-items:center;gap:.8rem;margin-top:.5rem">
-            <div class="det-display det-sm" id="guitar-det">–</div>
-            <div style="flex:1">
-              <div class="cents-bar-o"><div class="cents-center"></div><div class="cents-needle" id="guitar-cents" style="left:50%"></div></div>
-              <div class="slbl tc" id="guitar-cents-val">-- ¢</div>
-            </div>
-          </div>
-        </div></div>
-      </aside>
-    </div>
-  </section>
 
   <!-- ─── RHYTHM (Chords + Strums) ─── -->
   <section id="menu-rhythm" class="menu-section">
@@ -310,54 +214,6 @@
     </div>
   </section>
 
-  <!-- ─── RHYTHM QUEST (Falling Notes Game) ─── -->
-  <section id="menu-game" class="menu-section">
-    <div class="inst-layout">
-      <div>
-        <div style="text-align:center;margin-bottom:.8rem">
-          <div style="font-family:'Cinzel Decorative',serif;font-size:1.8rem;color:var(--nk);text-shadow:0 0 18px rgba(233,69,96,.65)">RHYTHM QUEST</div>
-          <div style="font-family:'IM Fell English',serif;font-style:italic;color:var(--tmid)">Strike the notes as they fall. Achieve harmony.</div>
-        </div>
-        <div class="rg-score-disp" id="rg-score">0</div>
-        <div class="rg-combo-disp" id="rg-combo"></div>
-        <div class="rg-grade-disp" id="rg-grade"></div>
-        <div class="rg-screen" id="rg-screen">
-          <div class="rg-target-line"></div>
-          <div class="rg-key-hint" id="rg-key-hint"></div>
-        </div>
-        <div style="display:flex;gap:.6rem;justify-content:center;margin-top:.7rem;flex-wrap:wrap">
-          <button class="btn btn-solid" id="rg-start-btn" onclick="Game.rgToggle()">◆ START QUEST</button>
-          <button class="btn btn-red" onclick="Game.rgReset()">Reset</button>
-        </div>
-      </div>
-      <aside>
-        <div class="panel"><div class="p-inner">
-          <div class="section-hd">Stats</div>
-          <div class="slbl">Best Score</div><div class="sval acg" id="rg-best">0</div>
-          <div class="slbl">Accuracy</div><div class="sval acg" id="rg-acc">--%</div>
-          <div class="slbl">Max Combo</div><div class="sval acg" id="rg-maxc">0</div>
-          <div class="hr"></div>
-          <div class="section-hd">Difficulty</div>
-          <div style="display:flex;flex-direction:column;gap:.35rem">
-            <button class="btn btn-gold btn-sm rg-diff active-diff" onclick="Game.rgDiff('easy',this)">Easy</button>
-            <button class="btn btn-gold btn-sm rg-diff" onclick="Game.rgDiff('normal',this)">Normal</button>
-            <button class="btn btn-gold btn-sm rg-diff" onclick="Game.rgDiff('hard',this)">Hard</button>
-            <button class="btn btn-gold btn-sm rg-diff" onclick="Game.rgDiff('expert',this)">Expert</button>
-          </div>
-          <div class="hr"></div>
-          <div class="section-hd">Note Sound</div>
-          <select id="rg-sound" class="fb-sel" style="width:100%">
-            <option value="synth">Synth</option><option value="guitar">Guitar</option><option value="piano">Piano</option>
-          </select>
-          <div class="hr"></div>
-          <div class="section-hd">Keys</div>
-          <div style="font-family:'Cutive Mono',monospace;font-size:.65rem;color:var(--tmid);line-height:2">
-            D → Lane 1<br>F → Lane 2<br>J → Lane 3<br>K → Lane 4
-          </div>
-        </div></div>
-      </aside>
-    </div>
-  </section>
 
   <!-- ─── DASHBOARD ─── -->
   <section id="menu-dashboard" class="menu-section">
@@ -411,10 +267,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous" defer></script>
 <script src="js/audio.js"></script>
-<script src="js/guitar.js"></script>
 <script src="js/vision.js"></script>
 <script src="js/game.js"></script>
 <script src="js/app.js"></script>
 <script src="js/battle.js"></script>
 </body>
 </html>
+

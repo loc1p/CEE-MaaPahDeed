@@ -380,6 +380,7 @@ body::after {
 
 .acg { color: var(--neon-green); text-shadow: 0 0 8px rgba(57,255,20,.6); }
 .hidden { display: none !important; }
+
 .hr { border: none; border-top: 1px solid var(--border-dim); margin: 1.2rem 0; }
 
 /* Visualizer */
