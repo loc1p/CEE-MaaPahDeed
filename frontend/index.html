@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>MaaPahDeed — Ensemble RPG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=IM+Fell+English:ital@0;1&family=Special+Elite&family=Cutive+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=IM+Fell+English:ital@0;1&family=Mali:wght@500;600;700&family=Noto+Serif+Thai:wght@500;600;700;800&family=Special+Elite&family=Cutive+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <!-- Load Meyda for Audio Features -->
 <script src="https://unpkg.com/meyda/dist/web/meyda.min.js"></script>
@@ -181,6 +181,10 @@
           <p class="cc-copy">Left side selects chords · Right side strums · Open fingers to play · Close fingers on the return stroke for silence</p>
         </div>
         <div class="cc-controls">
+          <div class="cc-mode-switch" aria-label="Camera mode">
+            <button class="cc-mode-btn active" type="button" data-cc-mode="normal">Normal</button>
+            <button class="cc-mode-btn" type="button" data-cc-mode="maphadeed">Maphadeed</button>
+          </div>
           <button class="btn btn-gold" id="cc-start-btn">◆ Open Camera / Start Playing ◆</button>
           <button class="btn btn-red" id="cc-mute-btn">Sound: On</button>
           <button class="btn" id="cc-panic-btn" title="Cut all sound immediately">Cut Sound</button>

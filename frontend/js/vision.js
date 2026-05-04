@@ -30,6 +30,14 @@ const Vision = (() => {
   let domainAudio = null;
   let domainSegmentIndex = 0;
   let domainStopTimer = null;
+  let cp52Audio = null;
+  let cp52StopTimer = null;
+  let cp52FadeFrame = null;
+  let cp52Active = false;
+  let smileWasActive = false;
+  let lastSmileAt = 0;
+  let smileHoldFrames = 0;
+  let maphadeedMode = false;
   let muted = false;
   let currentChord = 'C';
   let lastChord = 'C';
@@ -47,6 +55,7 @@ const Vision = (() => {
   let lastCanvasW = 0;
   let lastCanvasH = 0;
   let danceMode = false;
+  let danceAutoHideTimer = null;
   let blinkWasClosed = false;
   let lastBlinkAt = 0;
   let eyeOpenBaseline = 0.27;
@@ -68,7 +77,17 @@ const Vision = (() => {
   const DRUM_SAMPLE_END = 15;
   const DOG_COLORS = ['green', 'yellow', 'blue', 'pink', 'yellow', 'red'];
   const DOMAIN_SOUND_URL = 'audio/leat-eq-tokyo.mp3';
-  const DOMAIN_SOUND_SEGMENTS = [[30, 32], [92, 94]];
+  const DOMAIN_SOUND_SEGMENTS = [[31, 34], [92, 96]];
+  const DANCE_VISIBLE_MS = 5000;
+  const CP52_SOUND_URL = 'audio/cp52-wink.mp3';
+  const CP52_TYPE_SPEED = 76;
+  const CP52_END_DELAY = 3000;
+  const CP52_FADE_DURATION = 2200;
+  const CP52_VOLUME = 0.95;
+  const SMILE_COOLDOWN = 1800;
+  const SMILE_RATIO = 2.7;
+  const SMILE_HOLD_FRAMES = 12;
+  const CP52_INTRO_TEXT = 'ขอบคุณอาจารย์ทุกท่านที่มอบทั้งความรู้ เวลา และความเชื่อมั่นให้พวกเราได้กล้าลองผิดลองถูก จนความคิดเล็ก ๆ ค่อย ๆ กลายเป็นผลงานชิ้นนี้ ขอบคุณที่เปิดพื้นที่ให้เสียง ดนตรี ภาพ และเทคโนโลยีได้มาพบกันอย่างมีความหมาย ทุกบรรทัดของโค้ด ทุกจังหวะที่เกิดขึ้นบนหน้าจอ และทุกความสนุกที่เราได้สร้าง ล้วนมีรากมาจากแรงบันดาลใจและคำแนะนำของอาจารย์ หากไม่มีการสนับสนุนเหล่านี้ สิ่งนี้คงเป็นเพียงไอเดียที่ยังไม่กล้าเริ่ม วันนี้พวกเราขอมอบโปรเจกต์นี้เป็นคำขอบคุณจากใจ เป็นหลักฐานเล็ก ๆ ว่าการเรียนรู้ที่ดีสามารถทำให้คนธรรมดากล้าสร้างสิ่งที่มีชีวิตขึ้นมาได้จริง\n\nคณะผู้จัดทำ\nกลุ่ม Les King Southern Thailand\nSupphanat Thanaphon\nWiramorn Ounruan\nPrompassorn Piriyavinit';
   const BLINK_CLOSED_RATIO = 0.23;
   const BLINK_COOLDOWN = 950;
 
@@ -116,6 +135,49 @@ const Vision = (() => {
     } catch (err) {
       console.warn('Domain sound failed:', err);
     }
+  }
+
+  function playCp52Sound() {
+    if (muted) return;
+    if (!cp52Audio) {
+      cp52Audio = new Audio(CP52_SOUND_URL);
+      cp52Audio.preload = 'auto';
+      cp52Audio.volume = CP52_VOLUME;
+    }
+    try {
+      clearTimeout(cp52StopTimer);
+      cancelAnimationFrame(cp52FadeFrame);
+      cp52Audio.pause();
+      cp52Audio.currentTime = 0;
+      cp52Audio.volume = CP52_VOLUME;
+      cp52Audio.play().catch(err => console.warn('CP52 sound failed:', err));
+      cp52Audio.onended = () => endCp52Effect();
+    } catch (err) {
+      console.warn('CP52 sound failed:', err);
+    }
+  }
+
+  function fadeOutCp52Sound() {
+    if (!cp52Audio) {
+      endCp52Effect();
+      return;
+    }
+    const startedAt = performance.now();
+    const startVolume = cp52Audio.volume;
+    cancelAnimationFrame(cp52FadeFrame);
+    const tick = now => {
+      const progress = Math.min(1, (now - startedAt) / CP52_FADE_DURATION);
+      cp52Audio.volume = startVolume * (1 - progress);
+      if (progress < 1) {
+        cp52FadeFrame = requestAnimationFrame(tick);
+        return;
+      }
+      cp52Audio.pause();
+      cp52Audio.currentTime = 0;
+      cp52Audio.volume = CP52_VOLUME;
+      endCp52Effect();
+    };
+    cp52FadeFrame = requestAnimationFrame(tick);
   }
 
   function loadDrumSample() {
@@ -538,6 +600,7 @@ const Vision = (() => {
 
   function setDanceMode(enabled) {
     danceMode = enabled;
+    clearTimeout(danceAutoHideTimer);
     const stage = document.querySelector('.cc-camera-stage');
     if (!stage) return;
     stage.classList.toggle('cc-dance-mode', danceMode);
@@ -561,6 +624,7 @@ const Vision = (() => {
         dancer.classList.remove('cc-dance-exit');
         dancer.classList.add('cc-dance-enter');
       });
+      danceAutoHideTimer = setTimeout(() => setDanceMode(false), DANCE_VISIBLE_MS);
     } else if (dancers.length) {
       dancers.forEach(dancer => {
         dancer.classList.remove('cc-dance-enter');
@@ -575,14 +639,58 @@ const Vision = (() => {
   }
 
   function triggerDomainSwap() {
+    if (!maphadeedMode) return;
     const nextMode = !danceMode;
-    playDomainSound();
+    if (nextMode) playDomainSound();
     triggerPinkSmoke();
     const stage = document.querySelector('.cc-camera-stage');
     stage?.classList.add('cc-domain-flash');
     setTimeout(() => setDanceMode(nextMode), 420);
     setTimeout(() => stage?.classList.remove('cc-domain-flash'), 1250);
     showToast(nextMode ? 'DOMAIN DANCE' : 'DOMAIN RELEASED');
+  }
+
+  function triggerCp52Effect() {
+    if (!maphadeedMode) return;
+    const stage = document.querySelector('.cc-camera-stage');
+    if (!stage || cp52Active) return;
+    cp52Active = true;
+    stopDrumSample(0.08);
+    clearDogDance();
+    setDanceMode(false);
+    playCp52Sound();
+    stage.classList.add('cc-cp52-hit');
+    let intro = stage.querySelector('.cc-cp52-intro');
+    if (!intro) {
+      intro = document.createElement('div');
+      intro.className = 'cc-cp52-intro';
+      stage.appendChild(intro);
+    }
+    intro.textContent = '';
+    clearInterval(triggerCp52Effect.typeTimer);
+    clearTimeout(triggerCp52Effect.fadeTimer);
+    let i = 0;
+    triggerCp52Effect.typeTimer = setInterval(() => {
+      intro.textContent = CP52_INTRO_TEXT.slice(0, i);
+      intro.scrollTop = intro.scrollHeight;
+      i += 1;
+      if (i > CP52_INTRO_TEXT.length) {
+        clearInterval(triggerCp52Effect.typeTimer);
+        cp52StopTimer = setTimeout(fadeOutCp52Sound, CP52_END_DELAY);
+      }
+    }, CP52_TYPE_SPEED);
+    showToast('CP52');
+  }
+
+  function endCp52Effect() {
+    cp52Active = false;
+    const stage = document.querySelector('.cc-camera-stage');
+    if (!stage) return;
+    stage.classList.remove('cc-cp52-hit');
+    stage.querySelector('.cc-cp52-intro')?.remove();
+    clearInterval(triggerCp52Effect.typeTimer);
+    clearTimeout(cp52StopTimer);
+    cancelAnimationFrame(cp52FadeFrame);
   }
 
   function pickNoise(start, stringIndex) {
@@ -605,9 +713,10 @@ const Vision = (() => {
 
   function playDrum(kind = 'mouth') {
     ensureAudio();
+    if (cp52Active) return;
     if (muted) return;
     if (kind === 'mouth') {
-      triggerDogRain();
+      if (maphadeedMode) triggerDogRain();
       playRecordedDrumLoop();
       return;
     }
@@ -878,29 +987,65 @@ const Vision = (() => {
     if (!faceSeen) {
       mouthWasOpen = false;
       blinkWasClosed = false;
+      smileWasActive = false;
+      smileHoldFrames = 0;
       $('cc-mouth-pill')?.classList.remove('red');
       return;
     }
 
     const lm = results.multiFaceLandmarks[0];
-    const leftEye = eyeOpenRatio(lm, 33, 133, 159, 145, 158, 153);
-    const rightEye = eyeOpenRatio(lm, 362, 263, 386, 374, 385, 380);
-    const eyeOpen = (leftEye + rightEye) / 2;
-    if (eyeOpen > BLINK_CLOSED_RATIO + 0.035) {
-      eyeOpenReady = true;
-      eyeOpenBaseline = eyeOpenBaseline * 0.88 + eyeOpen * 0.12;
-    }
-    const blinkLimit = Math.max(BLINK_CLOSED_RATIO, eyeOpenBaseline * 0.72);
-    const isBlinking = eyeOpenReady && (
-      eyeOpen < blinkLimit ||
-      (leftEye < blinkLimit && rightEye < blinkLimit * 1.12)
-    );
     const now = performance.now();
-    if (isBlinking && !blinkWasClosed && now - lastBlinkAt > BLINK_COOLDOWN) {
-      lastBlinkAt = now;
-      triggerDomainSwap();
+    const mouthWidth = Math.max(distance(lm[61], lm[291]), 0.0001);
+    const mouthOpen = Math.max(distance(lm[13], lm[14]), 0.0001);
+    const faceHeight = Math.max(distance(lm[10], lm[152]), 0.0001);
+    const mouthCenterY = (lm[13].y + lm[14].y) / 2;
+    const mouthCornersUp = ((mouthCenterY - lm[61].y) + (mouthCenterY - lm[291].y)) / 2;
+    if (maphadeedMode) {
+      const smileRatio = mouthWidth / mouthOpen;
+      const smileCandidate = smileRatio > SMILE_RATIO &&
+        mouthWidth > faceHeight * 0.32 &&
+        mouthOpen > faceHeight * 0.018 &&
+        mouthCornersUp > faceHeight * 0.026 &&
+        mouthOpen < mouthWidth * 0.34;
+      smileHoldFrames = smileCandidate ? Math.min(smileHoldFrames + 1, SMILE_HOLD_FRAMES) : 0;
+      const isSmiling = smileHoldFrames >= SMILE_HOLD_FRAMES;
+      if (isSmiling && !smileWasActive && now - lastSmileAt > SMILE_COOLDOWN) {
+        lastSmileAt = now;
+        triggerCp52Effect();
+      }
+      smileWasActive = isSmiling;
+    } else {
+      smileHoldFrames = 0;
+      smileWasActive = false;
     }
-    blinkWasClosed = isBlinking;
+
+    if (cp52Active) {
+      mouthWasOpen = false;
+      blinkWasClosed = false;
+      return;
+    }
+
+    if (maphadeedMode) {
+      const leftEye = eyeOpenRatio(lm, 33, 133, 159, 145, 158, 153);
+      const rightEye = eyeOpenRatio(lm, 362, 263, 386, 374, 385, 380);
+      const eyeOpen = (leftEye + rightEye) / 2;
+      if (eyeOpen > BLINK_CLOSED_RATIO + 0.035) {
+        eyeOpenReady = true;
+        eyeOpenBaseline = eyeOpenBaseline * 0.88 + eyeOpen * 0.12;
+      }
+      const blinkLimit = Math.max(BLINK_CLOSED_RATIO, eyeOpenBaseline * 0.72);
+      const isBlinking = eyeOpenReady && (
+        eyeOpen < blinkLimit ||
+        (leftEye < blinkLimit && rightEye < blinkLimit * 1.12)
+      );
+      if (isBlinking && !blinkWasClosed && now - lastBlinkAt > BLINK_COOLDOWN) {
+        lastBlinkAt = now;
+        triggerDomainSwap();
+      }
+      blinkWasClosed = isBlinking;
+    } else {
+      blinkWasClosed = false;
+    }
 
     const top = lm[13];
     const bottom = lm[14];
@@ -908,7 +1053,7 @@ const Vision = (() => {
     const right = lm[291];
     const open = Math.hypot(top.x - bottom.x, top.y - bottom.y);
     const width = Math.max(Math.hypot(left.x - right.x, left.y - right.y), 0.0001);
-    const isOpen = open / width > MOUTH_OPEN_RATIO;
+    const isOpen = !cp52Active && open / width > MOUTH_OPEN_RATIO;
     $('cc-mouth-pill')?.classList.toggle('red', isOpen);
 
     if (isOpen && !mouthWasOpen && now - lastMouthDrumAt > MOUTH_DRUM_COOLDOWN) {
@@ -1024,12 +1169,42 @@ const Vision = (() => {
     }
   }
 
+  function setCameraMode(mode = 'normal', silent = false) {
+    maphadeedMode = mode === 'maphadeed';
+    document.querySelectorAll('[data-cc-mode]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.ccMode === mode);
+    });
+    document.querySelector('.cc-camera-stage')?.classList.toggle('cc-maphadeed-mode', maphadeedMode);
+    if ($('cc-mouth-pill')) $('cc-mouth-pill').textContent = maphadeedMode ? 'MOUTH DOG DRUM' : 'MOUTH DRUM';
+    if ($('cc-tips')) {
+      $('cc-tips').innerHTML = maphadeedMode
+        ? '<strong>Maphadeed mode:</strong> Smile = CP52 intro · Blink = dance GIF · Open mouth = dog drum · Strum and chords still work'
+        : '<strong>Normal mode:</strong> Play guitar with gestures · Open mouth = drum only · No special visual effects';
+    }
+    if (!maphadeedMode) {
+      clearTimeout(domainStopTimer);
+      domainAudio?.pause();
+      cp52Audio?.pause();
+      endCp52Effect();
+      setDanceMode(false);
+      clearDogDance();
+      smileHoldFrames = 0;
+      smileWasActive = false;
+      blinkWasClosed = false;
+    }
+    if (!silent) showToast(maphadeedMode ? 'MAPHADEED MODE' : 'NORMAL MODE');
+  }
+
   function bindEvents() {
     if (initialized) return;
     initialized = true;
     renderChordMap();
     resizeOverlay();
 
+    document.querySelectorAll('[data-cc-mode]').forEach(btn => {
+      btn.addEventListener('click', () => setCameraMode(btn.dataset.ccMode));
+    });
+    setCameraMode('normal', true);
     $('cc-start-btn')?.addEventListener('click', startCamera);
     $('cc-mute-btn')?.addEventListener('click', () => {
       muted = !muted;
@@ -1038,6 +1213,8 @@ const Vision = (() => {
       if (muted) {
         clearTimeout(domainStopTimer);
         domainAudio?.pause();
+        cp52Audio?.pause();
+        endCp52Effect();
         stopDrumSample(0.08);
         clearDogDance();
       }
@@ -1065,7 +1242,8 @@ const Vision = (() => {
       if (e.key === 'ArrowDown') playChord('down');
       if (e.key === 'ArrowUp') playChord('up');
       if (e.key.toLowerCase() === 'm') playDrum('mouth');
-      if (e.key.toLowerCase() === 'b') triggerDomainSwap();
+      if (e.key.toLowerCase() === 'b' && maphadeedMode) triggerDomainSwap();
+      if (e.key.toLowerCase() === 'c' && maphadeedMode) triggerCp52Effect();
       if (e.key === 'Escape') stopAllVoices();
     });
 
