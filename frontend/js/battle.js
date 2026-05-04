@@ -19,8 +19,16 @@ const Battle = {
     const pick = notes[Math.floor(Math.random() * notes.length)];
     this.targetFreq = pick.freq;
 
-    const display = document.getElementById('battle-target');
-    display.textContent = pick.name;
+    const nameDisplay = document.getElementById('tgt-note');
+    if (nameDisplay) {
+      nameDisplay.textContent = pick.name;
+    }
+
+    // 2. อัปเดตตัวเลขความถี่และอ็อกเทฟ (ต้องใช้ id 'tgt-hz')
+    const hzDisplay = document.getElementById('tgt-hz');
+    if (hzDisplay) {
+      hzDisplay.textContent = `${pick.freq} Hz · Octave ${pick.octave}`;
+    }
   },
 
   hit(freq, el) {
@@ -63,4 +71,26 @@ const Battle = {
   // เริ่มเกมจริง
      this.start();
     },
+    // ฟังก์ชันสำหรับเล่นเสียงโน้ตเป้าหมายปัจจุบัน
+  playTargetNote() {
+    if (this.targetFreq) {
+      // เรียกใช้ AudioEngine เพื่อเล่นเสียงตามความถี่ (Frequency) ที่สุ่มได้
+      AudioEngine.playTone(this.targetFreq); 
+    }
+  },
+
+  // ฟังก์ชันสำหรับหนีและออกจากเกม
+  flee() {
+    // ซ่อนหน้าต่างเกมเพลย์
+    document.getElementById('battle-game').classList.add('hidden');
+    
+    // นำหน้าต่างเริ่มต้นกลับมาแสดง
+    document.getElementById('battle-start-screen').classList.remove('hidden');
+    
+    // รีเซ็ตคะแนนกลับเป็น 0
+    this.score = 0;
+    this.updateScore();
+  },
+
+    
 };

@@ -7,6 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Special+Elite&family=Cutive+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<!-- Load Meyda for Audio Features -->
+<script src="https://unpkg.com/meyda/dist/web/meyda.min.js"></script>
+<!-- Load ONNX Runtime Web -->
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 </head>
 <body>
 
@@ -76,7 +80,7 @@
           <div id="battle-start-screen">
             <div class="battle-quote">"Sing the note that slays the beast. The perfect pitch is thy only weapon…"</div>
             <div id="battle-mic-err" class="auth-error hidden">Microphone access denied. Please allow and refresh.</div>
-            <button class="big-btn" onclick="Game.initBattle()">◆ BEGIN THE QUEST ◆</button>
+            <button class="big-btn" onclick="Battle.startGameUI()">◆ BEGIN THE QUEST ◆</button>
           </div>
           <div id="battle-game" class="hidden">
             <div class="monster-row">
@@ -107,9 +111,9 @@
             </div>
             <div class="battle-feedback" id="battle-fb">Hum into the microphone…</div>
             <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
-              <button class="btn btn-gold" onclick="Game.btlHearNote()">▶ Hear Note</button>
-              <button class="btn btn-gold" onclick="Game.btlNext()">↻ New Note</button>
-              <button class="btn btn-red"  onclick="Game.btlReset()">✕ Flee</button>
+              <button class="btn btn-gold" onclick="Battle.playTargetNote()">▶ Hear Note</button>
+              <button class="btn btn-gold" onclick="Battle.nextNote()">↻ New Note</button>
+              <button class="btn btn-red"  onclick="Battle.flee()">✕ Flee</button>
             </div>
             <div class="battle-log-wrap">
               <div class="slbl">◆ Combat Chronicle</div>
@@ -411,5 +415,6 @@
 <script src="js/vision.js"></script>
 <script src="js/game.js"></script>
 <script src="js/app.js"></script>
+<script src="js/battle.js"></script>
 </body>
 </html>
