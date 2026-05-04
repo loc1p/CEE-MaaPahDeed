@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>MaaPahDeed — Ensemble RPG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Special+Elite&family=Cutive+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=IM+Fell+English:ital@0;1&family=Special+Elite&family=Cutive+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <!-- Load Meyda for Audio Features -->
 <script src="https://unpkg.com/meyda/dist/web/meyda.min.js"></script>
@@ -176,13 +176,13 @@
         <div>
           <div class="section-hd">Camera Guitar — Gesture Studio</div>
           <h1 class="cc-title">Air Guitar Studio Master</h1>
-          <p class="cc-copy">ซ้ายจอจับคอร์ด · ขวาจอดีด · ชูนิ้วตอนดีด = มีเสียง · หุบนิ้วตอนยกมือกลับ = เงียบ</p>
+          <p class="cc-copy">Left side selects chords · Right side strums · Open fingers to play · Close fingers on the return stroke for silence</p>
         </div>
         <div class="cc-controls">
-          <button class="btn btn-gold" id="cc-start-btn">◆ เปิดกล้อง / เริ่มเล่น ◆</button>
-          <button class="btn btn-red" id="cc-mute-btn">เสียง: เปิด</button>
-          <button class="btn" id="cc-panic-btn" title="ตัดเสียงทั้งหมดทันที">หยุดเสียงค้าง</button>
-          <button class="btn" id="cc-demo-btn" title="ทดสอบเสียงโดยไม่ใช้กล้อง">ทดสอบเสียง</button>
+          <button class="btn btn-gold" id="cc-start-btn">◆ Open Camera / Start Playing ◆</button>
+          <button class="btn btn-red" id="cc-mute-btn">Sound: On</button>
+          <button class="btn" id="cc-panic-btn" title="Cut all sound immediately">Cut Sound</button>
+          <button class="btn" id="cc-demo-btn" title="Test the sound without using the camera">Sound Test</button>
           <select id="cc-tone-select" class="cc-select">
             <option value="acoustic" selected>Steel Acoustic Long</option>
             <option value="electric">Clean Electric Long</option>
@@ -198,8 +198,8 @@
           <div class="cc-camera-stage">
             <video id="cc-video" playsinline muted class="hidden"></video>
             <canvas id="cc-overlay"></canvas>
-            <div class="cc-zone-tag cc-zone-chord">ซ้ายจอ · CHORD · สีทอง/ชมพู</div>
-            <div class="cc-zone-tag cc-zone-strum">ขวาจอ · STRUM · สีฟ้า</div>
+            <div class="cc-zone-tag cc-zone-chord">Left Zone · Chord · Gold / Pink</div>
+            <div class="cc-zone-tag cc-zone-strum">Right Zone · Strum · Blue</div>
             <div class="cc-screen-divider"></div>
             <div class="cc-strum-band"></div>
             <div class="cc-guitar-neck">
@@ -214,7 +214,7 @@
         <div class="p-inner">
           <div class="section-hd">Now Playing</div>
           <div class="cc-current-chord" id="cc-chord-name">C</div>
-          <div class="cc-chord-hint" id="cc-chord-hint">ชี้นิ้วเดียว = C</div>
+          <div class="cc-chord-hint" id="cc-chord-hint">Point one finger = C</div>
 
           <div class="hr"></div>
 
@@ -230,7 +230,7 @@
           <div class="hr"></div>
 
           <div class="cc-stat-label">Tracking</div>
-          <div class="cc-stat-val" id="cc-tracking-text">0 มือ · 0 หน้า</div>
+          <div class="cc-stat-val" id="cc-tracking-text">0 hands · 0 faces</div>
           <div class="cc-pill-row">
             <span class="cc-pill" id="cc-chord-hand-pill">Chord Hand</span>
             <span class="cc-pill" id="cc-strum-hand-pill">Strum Hand</span>
@@ -244,7 +244,7 @@
           <div class="hr"></div>
 
           <div class="cc-tips" id="cc-tips">
-            <strong>วิธีเล่นเร็ว:</strong> ตอนดีดให้ชูนิ้วอะไรก็ได้ · พอยกกลับให้หุบนิ้ว · อ้าปาก = กลอง · กด 1-6 เปลี่ยนคอร์ด · ลากเมาส์ด้านขวาทดสอบดีด
+            <strong>Quick play:</strong> Open any finger while strumming · Close your fingers on the return stroke · Open mouth = drum · Press 1-6 to change chords · Drag on the right side to test strumming
           </div>
         </div>
       </aside>

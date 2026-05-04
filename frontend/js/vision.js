@@ -2,12 +2,12 @@ const Vision = (() => {
   const $ = id => document.getElementById(id);
 
   const chords = [
-    { name: 'C', gesture: 'index', hint: 'ชี้นิ้วเดียว', notes: [130.81, 164.81, 196.00, 261.63, 329.63] },
-    { name: 'G', gesture: 'peace', hint: 'สองนิ้ว V', notes: [98.00, 123.47, 146.83, 196.00, 246.94, 392.00] },
-    { name: 'D', gesture: 'three', hint: 'สามนิ้ว', notes: [146.83, 220.00, 293.66, 369.99] },
-    { name: 'Am', gesture: 'four', hint: 'สี่นิ้ว', notes: [110.00, 164.81, 220.00, 261.63, 329.63] },
-    { name: 'Em', gesture: 'fist', hint: 'กำมือ', notes: [82.41, 123.47, 164.81, 196.00, 246.94, 329.63] },
-    { name: 'F', gesture: 'open', hint: 'แบมือ', notes: [87.31, 130.81, 174.61, 220.00, 261.63, 349.23] }
+    { name: 'C', gesture: 'index', hint: 'Point one finger', notes: [130.81, 164.81, 196.00, 261.63, 329.63] },
+    { name: 'G', gesture: 'peace', hint: 'Make a V sign', notes: [98.00, 123.47, 146.83, 196.00, 246.94, 392.00] },
+    { name: 'Dm', gesture: 'three', hint: 'Raise three fingers', notes: [146.83, 220.00, 293.66, 349.23] },
+    { name: 'Am', gesture: 'four', hint: 'Raise four fingers', notes: [110.00, 164.81, 220.00, 261.63, 329.63] },
+    { name: 'Em', gesture: 'fist', hint: 'Make a fist', notes: [82.41, 123.47, 164.81, 196.00, 246.94, 329.63] },
+    { name: 'F', gesture: 'open', hint: 'Open your hand', notes: [87.31, 130.81, 174.61, 220.00, 261.63, 349.23] }
   ];
 
   let initialized = false;
@@ -22,6 +22,14 @@ const Vision = (() => {
   let delay = null;
   let delayFeedback = null;
   let delayWet = null;
+  let drumRoom = null;
+  let drumRoomWet = null;
+  let drumSampleBuffer = null;
+  let drumSamplePromise = null;
+  let activeDrumSample = null;
+  let domainAudio = null;
+  let domainSegmentIndex = 0;
+  let domainStopTimer = null;
   let muted = false;
   let currentChord = 'C';
   let lastChord = 'C';
@@ -38,6 +46,11 @@ const Vision = (() => {
   let mouseStrum = null;
   let lastCanvasW = 0;
   let lastCanvasH = 0;
+  let danceMode = false;
+  let blinkWasClosed = false;
+  let lastBlinkAt = 0;
+  let eyeOpenBaseline = 0.27;
+  let eyeOpenReady = false;
 
   const STRUM_LINE_Y = 0.50;
   const STRUM_ZONE_HALF = 0.12;
@@ -49,6 +62,29 @@ const Vision = (() => {
   const RELEASE_ON_NEXT = 0.85;
   const MOUTH_OPEN_RATIO = 0.34;
   const MOUTH_DRUM_COOLDOWN = 230;
+  const DOG_DROP_COUNT = 12;
+  const DRUM_SAMPLE_URL = 'audio/drum-beat-100bpm.mp3';
+  const DRUM_SAMPLE_START = 5;
+  const DRUM_SAMPLE_END = 15;
+  const DOG_COLORS = ['green', 'yellow', 'blue', 'pink', 'yellow', 'red'];
+  const DOMAIN_SOUND_URL = 'audio/leat-eq-tokyo.mp3';
+  const DOMAIN_SOUND_SEGMENTS = [[30, 32], [92, 94]];
+  const BLINK_CLOSED_RATIO = 0.23;
+  const BLINK_COOLDOWN = 950;
+
+  function createRoomImpulse(seconds = 0.62, decay = 3.2) {
+    const len = Math.max(1, Math.floor(audioCtx.sampleRate * seconds));
+    const impulse = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
+    for (let ch = 0; ch < impulse.numberOfChannels; ch++) {
+      const data = impulse.getChannelData(ch);
+      for (let i = 0; i < len; i++) {
+        const t = i / len;
+        const early = i < audioCtx.sampleRate * 0.035 ? 1.35 : 1;
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, decay) * early;
+      }
+    }
+    return impulse;
+  }
 
   function showToast(message) {
     const toast = $('cc-toast');
@@ -57,6 +93,50 @@ const Vision = (() => {
     toast.classList.add('show');
     clearTimeout(showToast.timer);
     showToast.timer = setTimeout(() => toast.classList.remove('show'), 1500);
+  }
+
+  function playDomainSound() {
+    if (muted) return;
+    if (!domainAudio) {
+      domainAudio = new Audio(DOMAIN_SOUND_URL);
+      domainAudio.preload = 'auto';
+      domainAudio.volume = 0.95;
+    }
+    const [start, end] = DOMAIN_SOUND_SEGMENTS[domainSegmentIndex % DOMAIN_SOUND_SEGMENTS.length];
+    domainSegmentIndex += 1;
+    try {
+      clearTimeout(domainStopTimer);
+      domainAudio.pause();
+      domainAudio.currentTime = start;
+      domainAudio.play().catch(err => console.warn('Domain sound failed:', err));
+      domainStopTimer = setTimeout(() => {
+        domainAudio.pause();
+        domainAudio.currentTime = start;
+      }, Math.max(80, (end - start) * 1000));
+    } catch (err) {
+      console.warn('Domain sound failed:', err);
+    }
+  }
+
+  function loadDrumSample() {
+    ensureAudio();
+    if (drumSampleBuffer) return Promise.resolve(drumSampleBuffer);
+    if (drumSamplePromise) return drumSamplePromise;
+    drumSamplePromise = fetch(DRUM_SAMPLE_URL)
+      .then(res => {
+        if (!res.ok) throw new Error(`Could not load ${DRUM_SAMPLE_URL}`);
+        return res.arrayBuffer();
+      })
+      .then(data => audioCtx.decodeAudioData(data))
+      .then(buffer => {
+        drumSampleBuffer = buffer;
+        return buffer;
+      })
+      .catch(err => {
+        drumSamplePromise = null;
+        throw err;
+      });
+    return drumSamplePromise;
   }
 
   function ensureAudio() {
@@ -82,12 +162,18 @@ const Vision = (() => {
     delayFeedback.gain.value = 0.16;
     delayWet = audioCtx.createGain();
     delayWet.gain.value = 0.12;
+    drumRoom = audioCtx.createConvolver();
+    drumRoom.buffer = createRoomImpulse();
+    drumRoomWet = audioCtx.createGain();
+    drumRoomWet.gain.value = 0.22;
 
     dryBus.connect(compressor);
     delay.connect(delayFeedback);
     delayFeedback.connect(delay);
     delay.connect(delayWet);
     delayWet.connect(compressor);
+    drumRoom.connect(drumRoomWet);
+    drumRoomWet.connect(compressor);
     compressor.connect(master);
     master.connect(audioCtx.destination);
   }
@@ -199,6 +285,306 @@ const Vision = (() => {
     return src;
   }
 
+  function connectDrum(node, roomLevel = 0.32) {
+    const roomSend = audioCtx.createGain();
+    roomSend.gain.value = roomLevel;
+    node.connect(compressor);
+    node.connect(roomSend);
+    roomSend.connect(drumRoom);
+  }
+
+  function playKick(start, level = 0.78) {
+    const body = audioCtx.createOscillator();
+    const bodyGain = audioCtx.createGain();
+    const bodyOut = audioCtx.createBiquadFilter();
+    body.type = 'sine';
+    body.frequency.setValueAtTime(92, start);
+    body.frequency.exponentialRampToValueAtTime(48, start + 0.12);
+    bodyGain.gain.setValueAtTime(0.0001, start);
+    bodyGain.gain.exponentialRampToValueAtTime(level, start + 0.005);
+    bodyGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.34);
+    bodyOut.type = 'lowpass';
+    bodyOut.frequency.value = 210;
+    body.connect(bodyGain);
+    bodyGain.connect(bodyOut);
+    connectDrum(bodyOut, 0.18);
+    body.start(start);
+    body.stop(start + 0.38);
+
+    const click = noiseBurst(0.028);
+    const clickHp = audioCtx.createBiquadFilter();
+    const clickGain = audioCtx.createGain();
+    clickHp.type = 'bandpass';
+    clickHp.frequency.value = 2600;
+    clickHp.Q.value = 1.8;
+    clickGain.gain.setValueAtTime(0.0001, start);
+    clickGain.gain.exponentialRampToValueAtTime(level * 0.12, start + 0.002);
+    clickGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.024);
+    click.connect(clickHp);
+    clickHp.connect(clickGain);
+    connectDrum(clickGain, 0.12);
+    click.start(start);
+    click.stop(start + 0.03);
+  }
+
+  function playSnare(start, level = 0.28) {
+    const shell = audioCtx.createOscillator();
+    const shellGain = audioCtx.createGain();
+    const shellFilter = audioCtx.createBiquadFilter();
+    shell.type = 'triangle';
+    shell.frequency.setValueAtTime(185, start);
+    shell.frequency.exponentialRampToValueAtTime(148, start + 0.08);
+    shellGain.gain.setValueAtTime(0.0001, start);
+    shellGain.gain.exponentialRampToValueAtTime(level * 0.62, start + 0.004);
+    shellGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+    shellFilter.type = 'bandpass';
+    shellFilter.frequency.value = 240;
+    shellFilter.Q.value = 1.1;
+    shell.connect(shellGain);
+    shellGain.connect(shellFilter);
+    connectDrum(shellFilter, 0.38);
+    shell.start(start);
+    shell.stop(start + 0.18);
+
+    const sn = noiseBurst(0.22);
+    const bp = audioCtx.createBiquadFilter();
+    const hp = audioCtx.createBiquadFilter();
+    const sg = audioCtx.createGain();
+    bp.type = 'bandpass';
+    bp.frequency.value = 2250;
+    bp.Q.value = 0.9;
+    hp.type = 'highpass';
+    hp.frequency.value = 720;
+    sg.gain.setValueAtTime(0.0001, start);
+    sg.gain.exponentialRampToValueAtTime(level, start + 0.003);
+    sg.gain.exponentialRampToValueAtTime(0.0001, start + 0.19);
+    sn.connect(bp);
+    bp.connect(hp);
+    hp.connect(sg);
+    connectDrum(sg, 0.48);
+    sn.start(start);
+    sn.stop(start + 0.22);
+  }
+
+  function playHat(start, level = 0.09) {
+    const hat = noiseBurst(0.075);
+    const hp = audioCtx.createBiquadFilter();
+    const peak = audioCtx.createBiquadFilter();
+    const hg = audioCtx.createGain();
+    hp.type = 'highpass';
+    hp.frequency.value = 5200;
+    peak.type = 'peaking';
+    peak.frequency.value = 9000;
+    peak.Q.value = 1.2;
+    peak.gain.value = 5;
+    hg.gain.setValueAtTime(0.0001, start);
+    hg.gain.exponentialRampToValueAtTime(level, start + 0.002);
+    hg.gain.exponentialRampToValueAtTime(0.0001, start + 0.065);
+    hat.connect(hp);
+    hp.connect(peak);
+    peak.connect(hg);
+    connectDrum(hg, 0.36);
+    hat.start(start);
+    hat.stop(start + 0.08);
+  }
+
+  function playTom(start, freq = 190, level = 0.26) {
+    const tom = audioCtx.createOscillator();
+    const tg = audioCtx.createGain();
+    const tone = audioCtx.createBiquadFilter();
+    tom.type = 'sine';
+    tom.frequency.setValueAtTime(freq, start);
+    tom.frequency.exponentialRampToValueAtTime(freq * 0.52, start + 0.16);
+    tg.gain.setValueAtTime(0.0001, start);
+    tg.gain.exponentialRampToValueAtTime(level, start + 0.005);
+    tg.gain.exponentialRampToValueAtTime(0.0001, start + 0.34);
+    tone.type = 'lowpass';
+    tone.frequency.value = 720;
+    tom.connect(tg);
+    tg.connect(tone);
+    connectDrum(tone, 0.42);
+    tom.start(start);
+    tom.stop(start + 0.36);
+  }
+
+  function playDogDropGroove() {
+    ensureAudio();
+    if (muted) return;
+    const now = audioCtx.currentTime;
+    const beat = 0.12;
+    playKick(now, 0.72);
+    playHat(now + beat * 0.08, 0.06);
+    playHat(now + beat * 0.55, 0.04);
+    playSnare(now + beat, 0.3);
+    playKick(now + beat * 1.55, 0.42);
+    playHat(now + beat * 1.75, 0.05);
+    playTom(now + beat * 2.15, 182, 0.2);
+    playSnare(now + beat * 2.75, 0.34);
+    playKick(now + beat * 3.08, 0.58);
+    playTom(now + beat * 3.55, 132, 0.28);
+    playHat(now + beat * 3.9, 0.045);
+  }
+
+  function stopDrumSample(fadeSeconds = 0.18) {
+    if (!activeDrumSample || !audioCtx) return;
+    const now = audioCtx.currentTime;
+    try {
+      activeDrumSample.gain.gain.cancelScheduledValues(now);
+      activeDrumSample.gain.gain.setValueAtTime(activeDrumSample.gain.gain.value || 0.001, now);
+      activeDrumSample.gain.gain.linearRampToValueAtTime(0.0001, now + fadeSeconds);
+      activeDrumSample.source.stop(now + fadeSeconds + 0.02);
+    } catch (e) {}
+    activeDrumSample = null;
+  }
+
+  function playRecordedDrumLoop() {
+    ensureAudio();
+    if (muted) return false;
+    if (activeDrumSample && activeDrumSample.stopAt > audioCtx.currentTime + 0.25) {
+      return true;
+    }
+    if (!drumSampleBuffer) {
+      loadDrumSample()
+        .then(() => {
+          if (!muted) playRecordedDrumLoop();
+        })
+        .catch(err => {
+          console.warn('Falling back to generated drums:', err);
+          playDogDropGroove();
+        });
+      showToast('LOADING DRUM LOOP');
+      return true;
+    }
+
+    stopDrumSample(0.05);
+    const now = audioCtx.currentTime;
+    const offset = Math.min(DRUM_SAMPLE_START, Math.max(0, drumSampleBuffer.duration - 0.05));
+    const end = Math.min(DRUM_SAMPLE_END, drumSampleBuffer.duration);
+    const duration = Math.max(0.05, end - offset);
+    const source = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+    source.buffer = drumSampleBuffer;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.82, now + 0.04);
+    gain.gain.setValueAtTime(0.82, now + Math.max(0.05, duration - 0.55));
+    gain.gain.linearRampToValueAtTime(0.0001, now + duration);
+    source.connect(gain);
+    gain.connect(compressor);
+    source.start(now, offset, duration);
+    source.stop(now + duration + 0.02);
+    activeDrumSample = { source, gain, stopAt: now + duration };
+    source.addEventListener('ended', () => {
+      if (activeDrumSample?.source === source) activeDrumSample = null;
+    });
+    return true;
+  }
+
+  function clearDogDance() {
+    document.querySelectorAll('.cc-dog-drop').forEach(dog => dog.classList.add('cc-dog-exit'));
+    setTimeout(() => {
+      document.querySelectorAll('.cc-dog-drop.cc-dog-exit').forEach(dog => dog.remove());
+    }, 320);
+  }
+
+  function triggerDogRain(durationSeconds = DRUM_SAMPLE_END - DRUM_SAMPLE_START) {
+    const stage = document.querySelector('.cc-camera-stage');
+    if (!stage) return;
+    clearDogDance();
+    for (let i = 0; i < DOG_DROP_COUNT; i++) {
+      const dog = document.createElement('img');
+      const size = 48 + Math.random() * 46;
+      const direction = Math.random() > 0.5 ? 1 : -1;
+      const color = DOG_COLORS[Math.floor(Math.random() * DOG_COLORS.length)];
+      dog.src = 'dog.png';
+      dog.alt = '';
+      dog.className = `cc-dog-drop cc-dog-${color}`;
+      dog.style.left = `${4 + Math.random() * 88}%`;
+      dog.style.width = `${size}px`;
+      dog.style.setProperty('--dog-delay', `${i * 55 + Math.random() * 120}ms`);
+      dog.style.setProperty('--dog-duration', `${durationSeconds * 1000}ms`);
+      dog.style.setProperty('--dog-y', `${Math.random() * Math.max(80, stage.clientHeight - 160)}px`);
+      dog.style.setProperty('--dog-hop', `${24 + Math.random() * 54}px`);
+      dog.style.setProperty('--dog-drift', `${(Math.random() * 150 - 75).toFixed(1)}px`);
+      dog.style.setProperty('--dog-wobble', `${direction * (22 + Math.random() * 18)}deg`);
+      dog.style.setProperty('--dog-spin', `${direction * (18 + Math.random() * 28)}deg`);
+      dog.style.setProperty('--dog-scale', `${0.78 + Math.random() * 0.45}`);
+      stage.appendChild(dog);
+      const cleanup = () => dog.remove();
+      dog.addEventListener('animationend', cleanup, { once: true });
+      setTimeout(cleanup, durationSeconds * 1000 + 900);
+    }
+  }
+
+  function triggerPinkSmoke() {
+    const stage = document.querySelector('.cc-camera-stage');
+    if (!stage) return;
+    const smokeLayer = document.createElement('div');
+    smokeLayer.className = 'cc-smoke-layer';
+    for (let i = 0; i < 34; i++) {
+      const puff = document.createElement('span');
+      puff.className = 'cc-smoke-puff';
+      puff.style.left = `${Math.random() * 100}%`;
+      puff.style.top = `${46 + Math.random() * 46}%`;
+      puff.style.setProperty('--smoke-size', `${90 + Math.random() * 190}px`);
+      puff.style.setProperty('--smoke-x', `${(Math.random() * 360 - 180).toFixed(1)}px`);
+      puff.style.setProperty('--smoke-y', `${(-120 - Math.random() * 360).toFixed(1)}px`);
+      puff.style.setProperty('--smoke-delay', `${Math.random() * 220}ms`);
+      puff.style.setProperty('--smoke-duration', `${1150 + Math.random() * 800}ms`);
+      smokeLayer.appendChild(puff);
+    }
+    stage.appendChild(smokeLayer);
+    setTimeout(() => smokeLayer.remove(), 2500);
+  }
+
+  function setDanceMode(enabled) {
+    danceMode = enabled;
+    const stage = document.querySelector('.cc-camera-stage');
+    if (!stage) return;
+    stage.classList.toggle('cc-dance-mode', danceMode);
+    const dancers = stage.querySelectorAll('.cc-dance-avatar');
+    if (danceMode) {
+      if (!dancers.length) {
+        const lights = document.createElement('div');
+        lights.className = 'cc-rainbow-spotlights';
+        lights.innerHTML = '<span></span><span></span><span></span><span></span><span></span>';
+        stage.appendChild(lights);
+        const slots = ['left', 'center', 'right'];
+        for (const slot of slots) {
+          const dancer = document.createElement('img');
+          dancer.src = 'anime-dance-cutout.webp';
+          dancer.alt = '';
+          dancer.className = `cc-dance-avatar cc-dance-${slot}`;
+          stage.appendChild(dancer);
+        }
+      }
+      stage.querySelectorAll('.cc-dance-avatar').forEach(dancer => {
+        dancer.classList.remove('cc-dance-exit');
+        dancer.classList.add('cc-dance-enter');
+      });
+    } else if (dancers.length) {
+      dancers.forEach(dancer => {
+        dancer.classList.remove('cc-dance-enter');
+        dancer.classList.add('cc-dance-exit');
+      });
+      stage.querySelector('.cc-rainbow-spotlights')?.classList.add('cc-lights-exit');
+      setTimeout(() => {
+        stage.querySelectorAll('.cc-dance-avatar.cc-dance-exit').forEach(dancer => dancer.remove());
+        stage.querySelector('.cc-rainbow-spotlights.cc-lights-exit')?.remove();
+      }, 420);
+    }
+  }
+
+  function triggerDomainSwap() {
+    const nextMode = !danceMode;
+    playDomainSound();
+    triggerPinkSmoke();
+    const stage = document.querySelector('.cc-camera-stage');
+    stage?.classList.add('cc-domain-flash');
+    setTimeout(() => setDanceMode(nextMode), 420);
+    setTimeout(() => stage?.classList.remove('cc-domain-flash'), 1250);
+    showToast(nextMode ? 'DOMAIN DANCE' : 'DOMAIN RELEASED');
+  }
+
   function pickNoise(start, stringIndex) {
     const src = noiseBurst(0.018);
     const hp = audioCtx.createBiquadFilter();
@@ -220,33 +606,14 @@ const Vision = (() => {
   function playDrum(kind = 'mouth') {
     ensureAudio();
     if (muted) return;
+    if (kind === 'mouth') {
+      triggerDogRain();
+      playRecordedDrumLoop();
+      return;
+    }
     const now = audioCtx.currentTime;
-    const kick = audioCtx.createOscillator();
-    const kg = audioCtx.createGain();
-    kick.type = 'sine';
-    kick.frequency.setValueAtTime(135, now);
-    kick.frequency.exponentialRampToValueAtTime(48, now + 0.13);
-    kg.gain.setValueAtTime(0.0001, now);
-    kg.gain.exponentialRampToValueAtTime(kind === 'mouth' ? 0.75 : 0.45, now + 0.006);
-    kg.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
-    kick.connect(kg);
-    kg.connect(compressor);
-    kick.start(now);
-    kick.stop(now + 0.24);
-
-    const sn = noiseBurst(0.12);
-    const hp = audioCtx.createBiquadFilter();
-    const sg = audioCtx.createGain();
-    hp.type = 'highpass';
-    hp.frequency.value = 950;
-    sg.gain.setValueAtTime(0.0001, now);
-    sg.gain.exponentialRampToValueAtTime(kind === 'mouth' ? 0.16 : 0.09, now + 0.004);
-    sg.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
-    sn.connect(hp);
-    hp.connect(sg);
-    sg.connect(compressor);
-    sn.start(now);
-    sn.stop(now + 0.13);
+    playKick(now, 0.45);
+    playSnare(now + 0.055, 0.09);
   }
 
   function stopAllVoices() {
@@ -259,6 +626,8 @@ const Vision = (() => {
       } catch (e) {}
     }
     activeVoices = [];
+    stopDrumSample(0.08);
+    clearDogDance();
     lastPlayedAt = 0;
     const strumDir = $('cc-strum-dir');
     if (strumDir) strumDir.textContent = 'CUT';
@@ -303,6 +672,12 @@ const Vision = (() => {
   }
 
   function distance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+  function eyeOpenRatio(lm, outer, inner, topA, bottomA, topB, bottomB) {
+    const width = Math.max(distance(lm[outer], lm[inner]), 0.0001);
+    const openA = distance(lm[topA], lm[bottomA]);
+    const openB = distance(lm[topB], lm[bottomB]);
+    return (openA + openB) / (2 * width);
+  }
   function palmSize(lm) { return Math.max(distance(lm[0], lm[9]), 0.0001); }
   function getCenter(lm) {
     const sum = lm.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
@@ -502,11 +877,31 @@ const Vision = (() => {
     faceSeen = !!(results.multiFaceLandmarks && results.multiFaceLandmarks.length);
     if (!faceSeen) {
       mouthWasOpen = false;
+      blinkWasClosed = false;
       $('cc-mouth-pill')?.classList.remove('red');
       return;
     }
 
     const lm = results.multiFaceLandmarks[0];
+    const leftEye = eyeOpenRatio(lm, 33, 133, 159, 145, 158, 153);
+    const rightEye = eyeOpenRatio(lm, 362, 263, 386, 374, 385, 380);
+    const eyeOpen = (leftEye + rightEye) / 2;
+    if (eyeOpen > BLINK_CLOSED_RATIO + 0.035) {
+      eyeOpenReady = true;
+      eyeOpenBaseline = eyeOpenBaseline * 0.88 + eyeOpen * 0.12;
+    }
+    const blinkLimit = Math.max(BLINK_CLOSED_RATIO, eyeOpenBaseline * 0.72);
+    const isBlinking = eyeOpenReady && (
+      eyeOpen < blinkLimit ||
+      (leftEye < blinkLimit && rightEye < blinkLimit * 1.12)
+    );
+    const now = performance.now();
+    if (isBlinking && !blinkWasClosed && now - lastBlinkAt > BLINK_COOLDOWN) {
+      lastBlinkAt = now;
+      triggerDomainSwap();
+    }
+    blinkWasClosed = isBlinking;
+
     const top = lm[13];
     const bottom = lm[14];
     const left = lm[61];
@@ -516,7 +911,6 @@ const Vision = (() => {
     const isOpen = open / width > MOUTH_OPEN_RATIO;
     $('cc-mouth-pill')?.classList.toggle('red', isOpen);
 
-    const now = performance.now();
     if (isOpen && !mouthWasOpen && now - lastMouthDrumAt > MOUTH_DRUM_COOLDOWN) {
       lastMouthDrumAt = now;
       playDrum('mouth');
@@ -536,7 +930,7 @@ const Vision = (() => {
     if (results.multiHandLandmarks) {
       for (const lm of results.multiHandLandmarks) list.push({ lm, dc: displayCenter(lm) });
     }
-    $('cc-tracking-text').textContent = `${list.length} มือ · ${faceSeen ? 1 : 0} หน้า`;
+    $('cc-tracking-text').textContent = `${list.length} ${list.length === 1 ? 'hand' : 'hands'} · ${faceSeen ? 1 : 0} ${faceSeen ? 'face' : 'faces'}`;
 
     let chordHand = null;
     let strumHand = null;
@@ -560,11 +954,11 @@ const Vision = (() => {
     $('cc-chord-hand-pill')?.classList.toggle('on', !!chordHand);
     $('cc-strum-hand-pill')?.classList.toggle('blue', !!strumHand);
     if (!list.length) {
-      $('cc-tips').innerHTML = '<strong>ยังไม่เห็นมือ:</strong> เพิ่มแสง และให้มืออยู่ในเฟรมชัด ๆ';
+      $('cc-tips').innerHTML = '<strong>No hands detected:</strong> Add more light and keep your hands clearly inside the frame.';
     } else if (!chordHand || !strumHand) {
-      $('cc-tips').innerHTML = '<strong>เห็นมือแล้ว:</strong> ซ้ายจอจับคอร์ด ขวาจอดีด ตอนยกมือกลับให้หุบนิ้ว';
+      $('cc-tips').innerHTML = '<strong>Hand detected:</strong> Use the left side for chords and the right side for strumming. Close your fingers on the return stroke.';
     } else {
-      $('cc-tips').innerHTML = '<strong>พร้อมเล่น:</strong> ชูนิ้วตอนดีดลง/ขึ้น · หุบนิ้วตอนยกมือกลับ · อ้าปากหนึ่งครั้ง = กลอง';
+      $('cc-tips').innerHTML = '<strong>Ready to play:</strong> Open fingers while strumming down or up · Close fingers on return · Open your mouth once for a drum hit.';
     }
   }
 
@@ -589,7 +983,8 @@ const Vision = (() => {
     try {
       ensureAudio();
       await audioCtx.resume();
-      startBtn.textContent = 'กำลังเปิดกล้อง...';
+      loadDrumSample().catch(err => console.warn('Drum loop preload failed:', err));
+      startBtn.textContent = 'Opening Camera...';
       startBtn.disabled = true;
 
       if (typeof Hands === 'undefined' || typeof Camera === 'undefined') {
@@ -618,14 +1013,14 @@ const Vision = (() => {
       await camera.start();
       active = true;
       video.classList.remove('hidden');
-      startBtn.textContent = 'กำลังเล่นอยู่';
+      startBtn.textContent = 'Playing Now';
       showToast('READY TO STRUM');
     } catch (err) {
       console.error(err);
       startBtn.disabled = false;
-      startBtn.textContent = '◆ เปิดกล้อง / เริ่มเล่น ◆';
+      startBtn.textContent = '◆ Open Camera / Start Playing ◆';
       showToast('CAMERA ERROR');
-      $('cc-tips').innerHTML = '<strong>เปิดกล้องไม่ได้:</strong> ใช้ localhost/https และอนุญาตกล้อง';
+      $('cc-tips').innerHTML = '<strong>Camera unavailable:</strong> Use localhost or HTTPS, then allow camera access.';
     }
   }
 
@@ -638,8 +1033,14 @@ const Vision = (() => {
     $('cc-start-btn')?.addEventListener('click', startCamera);
     $('cc-mute-btn')?.addEventListener('click', () => {
       muted = !muted;
-      $('cc-mute-btn').textContent = `เสียง: ${muted ? 'ปิด' : 'เปิด'}`;
+      $('cc-mute-btn').textContent = `Sound: ${muted ? 'Off' : 'On'}`;
       if (master) master.gain.setTargetAtTime(muted ? 0 : 0.95, audioCtx.currentTime, 0.03);
+      if (muted) {
+        clearTimeout(domainStopTimer);
+        domainAudio?.pause();
+        stopDrumSample(0.08);
+        clearDogDance();
+      }
     });
     $('cc-tone-select')?.addEventListener('change', e => showToast(e.target.options[e.target.selectedIndex].text));
     $('cc-panic-btn')?.addEventListener('click', stopAllVoices);
@@ -664,6 +1065,7 @@ const Vision = (() => {
       if (e.key === 'ArrowDown') playChord('down');
       if (e.key === 'ArrowUp') playChord('up');
       if (e.key.toLowerCase() === 'm') playDrum('mouth');
+      if (e.key.toLowerCase() === 'b') triggerDomainSwap();
       if (e.key === 'Escape') stopAllVoices();
     });
 
@@ -705,7 +1107,7 @@ const Vision = (() => {
       if (video?.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
       active = false;
       $('cc-start-btn').disabled = false;
-      $('cc-start-btn').textContent = '◆ เปิดกล้อง / เริ่มเล่น ◆';
+      $('cc-start-btn').textContent = '◆ Open Camera / Start Playing ◆';
       showToast('CAMERA STOPPED');
     }
   };
