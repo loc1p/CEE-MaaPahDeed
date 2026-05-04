@@ -44,6 +44,10 @@ const LOCAL_CHORDS = [
   { name: 'A7', notes: ['A', 'C#', 'E', 'G'], type: 'Dominant 7' }
 ];
 
+const FALLBACK_SONG_CHORDS = {
+  'tyler-the-creator/are-we-still-friends': ['Fmaj7', 'Em7', 'Am7', 'Dm7', 'G7']
+};
+
 function auth(req, res, next) {
   const token = (req.headers.authorization || '').split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
@@ -76,6 +80,137 @@ function uniqueNotes(notes) {
       seen.add(pc);
       return true;
     });
+}
+
+function slugifySongPart(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/['".,!?()[\]{}]/g, '')
+    .replace(/&/g, 'and')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+function normalizeChordSymbol(symbol) {
+  return String(symbol || '')
+    .replace(/\s+/g, '')
+    .replace(/♯/g, '#')
+    .replace(/♭/g, 'b')
+    .replace(/^([A-G])B/, '$1b')
+    .trim();
+}
+
+function chordSymbolToNotes(symbol) {
+  const clean = normalizeChordSymbol(symbol);
+  const match = clean.match(/^([A-G](?:#|b)?)(.*)$/);
+  if (!match) return [];
+
+  const root = match[1];
+  const suffix = match[2].toLowerCase();
+  const rootPc = notePc(root);
+  if (rootPc === null) return [];
+
+  let intervals = [0, 4, 7];
+  if (suffix.includes('dim')) intervals = [0, 3, 6];
+  else if (suffix.includes('aug') || suffix.includes('+')) intervals = [0, 4, 8];
+  else if (suffix.includes('sus2')) intervals = [0, 2, 7];
+  else if (suffix.includes('sus4') || suffix.includes('sus')) intervals = [0, 5, 7];
+  else if (suffix.startsWith('m') && !suffix.startsWith('maj')) intervals = [0, 3, 7];
+
+  if (suffix.includes('6')) intervals.push(9);
+  if (suffix.includes('7')) intervals.push(suffix.includes('maj7') ? 11 : 10);
+  if (suffix.includes('9')) intervals.push(2);
+
+  const names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  return [...new Set(intervals.map(interval => names[(rootPc + interval) % 12]))];
+}
+
+function extractSongMetadata(html) {
+  const scriptMatch = String(html).match(/window\.SONG_METADATA\s*=\s*([\s\S]*?);\s*<\/script>/i);
+  if (!scriptMatch) return null;
+
+  const scriptText = scriptMatch[1];
+  const chordsMatch = scriptText.match(/CHORDS_USED\s*:\s*(\[[\s\S]*?\])/);
+  if (!chordsMatch) return null;
+
+  const chordsText = chordsMatch[1]
+    .replace(/'/g, '"')
+    .replace(/,\s*]/g, ']');
+
+  const field = name => {
+    const match = scriptText.match(new RegExp(`${name}\\s*:\\s*(['"])(.*?)\\1`, 'i'));
+    return match ? match[2] : null;
+  };
+
+  return {
+    CHORDS_USED: JSON.parse(chordsText),
+    TONALITY: field('TONALITY'),
+    KEY: field('KEY')
+  };
+}
+
+async function fetchEChordsSong(artist, song) {
+  const artistSlug = slugifySongPart(artist);
+  const songSlug = slugifySongPart(song);
+  if (!artistSlug || !songSlug) throw new Error('Artist and song are required');
+
+  const url = `https://www.e-chords.com/chords/${artistSlug}/${songSlug}`;
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'text/html',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36'
+    }
+  });
+
+  if (response.status === 403) {
+    const error = new Error('E-Chords blocked the automated request');
+    error.status = 403;
+    throw error;
+  }
+  if (response.status === 404) {
+    const error = new Error('Song not found on E-Chords');
+    error.status = 404;
+    throw error;
+  }
+  if (!response.ok) throw new Error(`E-Chords HTTP ${response.status}`);
+
+  const metadata = extractSongMetadata(await response.text());
+  if (!metadata) throw new Error('E-Chords metadata not found');
+
+  const rawChords = Array.isArray(metadata.CHORDS_USED) ? metadata.CHORDS_USED : [];
+  const chords = rawChords
+    .map(chord => normalizeChordSymbol(chord))
+    .filter(Boolean)
+    .map(symbol => ({ symbol, notes: chordSymbolToNotes(symbol) }))
+    .filter(chord => chord.notes.length >= 2);
+
+  return {
+    source: 'E-Chords',
+    url,
+    artist,
+    song,
+    key: metadata.TONALITY || metadata.KEY || null,
+    chords: [...new Map(chords.map(chord => [chord.symbol, chord])).values()]
+  };
+}
+
+function fallbackSongChords(artist, song, externalApiError = null) {
+  const key = `${slugifySongPart(artist)}/${slugifySongPart(song)}`;
+  const symbols = FALLBACK_SONG_CHORDS[key];
+  if (!symbols) return null;
+
+  return {
+    source: 'Local fallback chord quest',
+    externalApiError,
+    artist,
+    song,
+    key: null,
+    fallback: true,
+    chords: symbols
+      .map(symbol => ({ symbol, notes: chordSymbolToNotes(symbol) }))
+      .filter(chord => chord.notes.length >= 2)
+  };
 }
 
 function scoreChords(inputNotes, chords) {
@@ -338,6 +473,26 @@ app.get('/api/music/search', auth, async (req, res) => {
     });
   } catch {
     res.status(500).json({ error: 'MusicBrainz failed' });
+  }
+});
+
+app.get('/api/music/chords', async (req, res) => {
+  const artist = String(req.query.artist || '').trim();
+  const song = String(req.query.song || '').trim();
+
+  try {
+    if (!artist || !song) return res.status(400).json({ error: 'Artist and song are required' });
+
+    const result = await fetchEChordsSong(artist, song);
+    res.json(result);
+  } catch (error) {
+    const fallback = fallbackSongChords(artist, song, error.message);
+    if (fallback && fallback.chords.length) {
+      res.json(fallback);
+      return;
+    }
+
+    res.status(error.status || 500).json({ error: error.message || 'Song chord lookup failed' });
   }
 });
 

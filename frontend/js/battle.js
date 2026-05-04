@@ -22,6 +22,11 @@ const Battle = {
   monsterHp: 5,
   monsterMaxHp: 5,
   detectedNotes: [],
+  recentPlayedNotes: [],
+  songChordTargets: [],
+  songChordIndex: 0,
+  songChordMeta: null,
+  targetChord: null,
   chordRecording: false,
 
   audioCtx: null,
@@ -124,8 +129,14 @@ const Battle = {
   },
 
   nextNote() {
+    if (this.songChordTargets.length) {
+      this.nextSongChord();
+      return;
+    }
+
     const pick = this.targets[Math.floor(Math.random() * this.targets.length)];
     this.target = pick;
+    this.targetChord = null;
     this.matchHeld = 0;
 
     this.setText('tgt-note', pick.name);
@@ -136,12 +147,60 @@ const Battle = {
     this.setFeedback(`Target: play ${pick.name}${pick.octave}.`);
   },
 
+  nextSongChord() {
+    const pick = this.songChordTargets[this.songChordIndex % this.songChordTargets.length];
+    this.songChordIndex += 1;
+    this.target = null;
+    this.targetChord = pick;
+    this.matchHeld = 0;
+    this.recentPlayedNotes = [];
+
+    this.setText('tgt-note', pick.symbol);
+    this.setText('tgt-hz', `Play chord tones: ${pick.notes.join(' - ')}`);
+    this.setText('det-note', '-');
+    this.setText('cents-val', '-- cents');
+    this.setNeedle(50);
+    this.setFeedback(`Target chord: ${pick.symbol}. Strum or pick its notes clearly.`);
+  },
+
+  loadSongChords(chords, meta = {}) {
+    this.songChordTargets = chords.filter(chord => chord && chord.symbol && Array.isArray(chord.notes) && chord.notes.length >= 2);
+    this.songChordIndex = 0;
+    this.songChordMeta = meta;
+    this.targetChord = null;
+    this.recentPlayedNotes = [];
+
+    this.addLog(`Loaded ${this.songChordTargets.length} chords from ${meta.song || 'song'}.`);
+    this.setText('sb-weakness', 'Song chord tones');
+
+    if (this.songChordTargets.length) {
+      this.nextSongChord();
+    }
+  },
+
   async playTargetNote() {
+    if (this.targetChord) {
+      await this.playTargetChord();
+      return;
+    }
+
     if (!this.target) this.nextNote();
     await this.playGuitarTone(this.target.freq);
   },
 
-  async playGuitarTone(freq) {
+  async playTargetChord() {
+    if (!this.targetChord) return;
+
+    for (const note of this.targetChord.notes) {
+      const freq = this.noteNameToFrequency(note, 4);
+      if (freq) await this.playGuitarTone(freq, note);
+      await new Promise(resolve => setTimeout(resolve, 180));
+    }
+
+    this.setFeedback(`Playing ${this.targetChord.symbol} arpeggio.`);
+  },
+
+  async playGuitarTone(freq, label = null) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) {
       this.setFeedback('This browser does not support Web Audio.');
@@ -187,11 +246,12 @@ const Battle = {
       osc.stop(now + 1.9);
     });
 
-    this.setFeedback(`Playing ${this.target.name}${this.target.octave}. If silent, check tab/Windows volume.`);
+    const targetLabel = label || (this.target ? `${this.target.name}${this.target.octave}` : 'target note');
+    this.setFeedback(`Playing ${targetLabel}. If silent, check tab/Windows volume.`);
   },
 
   tick() {
-    if (!this.analyser || !this.target) return;
+    if (!this.analyser || (!this.target && !this.targetChord)) return;
 
     this.analyser.getByteFrequencyData(this.freqData);
     this.updateVisualizer();
@@ -222,6 +282,11 @@ const Battle = {
 
   handleDetectedFrequency(freq, clarity = 1) {
     const note = this.frequencyToNote(freq);
+    if (this.targetChord) {
+      this.handleDetectedChordNote(note, freq, clarity);
+      return;
+    }
+
     const targetBase = this.target.name;
     const cents = Math.round(1200 * Math.log2(freq / note.freq));
     const absCents = Math.abs(cents);
@@ -249,6 +314,35 @@ const Battle = {
     }
   },
 
+  handleDetectedChordNote(note, freq, clarity = 1) {
+    const targetNotes = this.targetChord.notes;
+    const cents = Math.round(1200 * Math.log2(freq / note.freq));
+    const absCents = Math.abs(cents);
+
+    this.setText('det-note', `${note.name}${note.octave}`);
+    this.setText('cents-val', `${cents >= 0 ? '+' : ''}${cents} cents`);
+    this.setNeedle(Math.max(0, Math.min(100, 50 + cents / 2)));
+    this.rememberPlayedNote(note.name);
+
+    const played = [...new Set(this.recentPlayedNotes.map(item => item.name))];
+    const matched = targetNotes.filter(target => played.includes(target));
+    const needed = Math.min(3, targetNotes.length);
+    const isTargetTone = targetNotes.includes(note.name) && absCents <= 35;
+
+    const detected = document.getElementById('det-note');
+    if (detected) detected.classList.toggle('matched', isTargetTone);
+
+    if (matched.length >= needed) {
+      this.matchHeld += 1;
+      this.setFeedback(`${this.targetChord.symbol}: ${matched.join(' - ')} found. Hold the chord. Clarity ${(clarity * 100).toFixed(0)}%.`);
+      if (this.matchHeld >= 8) this.registerHit(false);
+      return;
+    }
+
+    this.matchHeld = 0;
+    this.setFeedback(`${this.targetChord.symbol} needs ${targetNotes.join(' - ')}. Heard: ${played.join(' - ') || note.name}.`);
+  },
+
   registerHit(perfect) {
     const now = performance.now();
     if (now - this.lastHitAt < 900) return;
@@ -258,7 +352,8 @@ const Battle = {
     this.score += points;
     this.streak += 1;
     this.monsterHp = Math.max(0, this.monsterHp - 1);
-    this.addLog(`${perfect ? 'Perfect' : 'Hit'} ${this.target.name}${this.target.octave} +${points}`);
+    const targetLabel = this.targetChord ? this.targetChord.symbol : `${this.target.name}${this.target.octave}`;
+    this.addLog(`${perfect ? 'Perfect' : 'Hit'} ${targetLabel} +${points}`);
 
     if (this.monsterHp === 0) {
       this.monstersDefeated += 1;
@@ -353,6 +448,14 @@ const Battle = {
     return { midi, name, octave, freq: noteFreq };
   },
 
+  noteNameToFrequency(name, octave = 4) {
+    const idx = this.noteNames.indexOf(String(name || '').toUpperCase());
+    if (idx === -1) return null;
+
+    const midi = (octave + 1) * 12 + idx;
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  },
+
   getRms(buffer) {
     let sum = 0;
     for (let i = 0; i < buffer.length; i++) sum += buffer[i] * buffer[i];
@@ -391,6 +494,15 @@ const Battle = {
 
     this.detectedNotes.push({ name: noteName, time: now });
     this.detectedNotes = this.detectedNotes.filter(item => now - item.time < 8000).slice(-12);
+  },
+
+  rememberPlayedNote(noteName) {
+    const now = performance.now();
+    const recent = this.recentPlayedNotes[this.recentPlayedNotes.length - 1];
+    if (recent && recent.name === noteName && now - recent.time < 250) return;
+
+    this.recentPlayedNotes.push({ name: noteName, time: now });
+    this.recentPlayedNotes = this.recentPlayedNotes.filter(item => now - item.time < 4500).slice(-16);
   },
 
   async recordAndAnalyzeChord() {

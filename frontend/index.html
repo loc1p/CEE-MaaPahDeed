@@ -137,9 +137,10 @@
           <div class="quest-item"><div class="quest-title">The Forbidden Interval</div><div class="quest-desc">Identify the tritone hidden within the chord of shadows.</div></div>
           <div class="quest-item"><div class="quest-title">Perfect Fifth</div><div class="quest-desc">Match 10 notes in a row to unlock the Bard's Rune.</div></div>
           <div class="hr"></div>
-          <div class="section-hd">MusicBrainz Search</div>
-          <input type="text" id="mb-search" class="auth-input" placeholder="Artist or song title…" style="margin-bottom:.4rem">
-          <button class="btn btn-gold btn-sm" onclick="App.searchMusic()">Search</button>
+          <div class="section-hd">Song Chord Quest</div>
+          <input type="text" id="song-artist" class="auth-input" placeholder="Artist" style="margin-bottom:.4rem">
+          <input type="text" id="song-title" class="auth-input" placeholder="Song name" style="margin-bottom:.4rem">
+          <button class="btn btn-gold btn-sm" onclick="App.searchMusic()">Load Chords</button>
           <div id="mb-results" class="mb-results"></div>
         </div>
       </aside>
