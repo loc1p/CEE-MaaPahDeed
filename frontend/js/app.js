@@ -29,13 +29,6 @@ const App = {
       activeBtn.classList.add('active');
     }
 
-    if (menuId === 'guitar' && typeof Guitar !== 'undefined') {
-      Guitar.renderFretboard();
-    }
-
-    if (menuId !== 'game' && typeof Game !== 'undefined' && Game.rgStop) {
-      Game.rgStop();
-    }
   },
 
   async handleAuth(e) {

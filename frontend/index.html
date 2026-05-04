@@ -76,7 +76,7 @@
       <section class="panel">
         <div class="p-inner battle-center">
           <div id="battle-start-screen">
-            <div class="battle-quote">"Sing the note that slays the beast. The perfect pitch is thy only weapon…"</div>
+            <div class="battle-quote">"Play the note that slays the beast. Clean guitar pitch is thy only weapon…"</div>
             <div id="battle-mic-err" class="auth-error hidden">Microphone access denied. Please allow and refresh.</div>
             <button class="big-btn" onclick="Battle.startGameUI()">◆ BEGIN THE QUEST ◆</button>
           </div>
@@ -90,29 +90,31 @@
                 <div class="bar-o bar-red-o"><div class="bar-f bar-red" id="m-hp" style="width:100%"></div></div>
               </div>
             </div>
-            <div class="target-note-section">
-              <div class="slbl">✦ Sing This Note ✦</div>
+            <div class="target-note-section battle-readout">
+              <div class="slbl">Target Guitar Note</div>
               <div class="target-display" id="tgt-note">A</div>
-              <div class="target-hz" id="tgt-hz">440 Hz · Octave 4</div>
+              <div class="target-hz" id="tgt-hz">440 Hz - Octave 4</div>
             </div>
             <div class="viz-wrap" id="battle-viz"></div>
-            <div style="display:flex;align-items:center;justify-content:center;gap:2rem">
-              <div>
+            <div class="battle-meter-row">
+              <div class="battle-readout compact">
                 <div class="det-display" id="det-note">–</div>
-                <div class="slbl tc">Detected</div>
+                <div class="slbl tc">Detected Pitch</div>
               </div>
-              <div style="flex:1;max-width:200px">
+              <div class="battle-readout compact tuning-card">
                 <div class="slbl tc">Tuning</div>
                 <div class="cents-bar-o"><div class="cents-center"></div><div class="cents-needle" id="cents-needle" style="left:50%"></div></div>
                 <div class="slbl tc" id="cents-val">-- ¢</div>
               </div>
             </div>
-            <div class="battle-feedback" id="battle-fb">Hum into the microphone…</div>
-            <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
-            <button class="btn btn-gold" onclick="Battle.playTargetNote()">▶ Hear Note</button>
-            <button class="btn btn-gold" onclick="Battle.nextNote()">↻ New Note</button>
-            <button class="btn btn-red"  onclick="Battle.flee()">✕ Flee</button>
+            <div class="battle-feedback" id="battle-fb">Play your guitar into the microphone…</div>
+            <div class="battle-action-row">
+              <button class="btn btn-gold" onclick="Battle.playTargetNote()">▶ Hear Note</button>
+              <button class="btn btn-gold" onclick="Battle.nextNote()">↻ New Note</button>
+              <button class="btn btn-gold" onclick="Battle.recordAndAnalyzeChord()">AI Full Chord 3s</button>
+              <button class="btn btn-red"  onclick="Battle.flee()">✕ Flee</button>
             </div>
+            <div id="chord-analysis" class="chord-analysis hidden"></div>
             <div class="battle-log-wrap">
               <div class="slbl">◆ Combat Chronicle</div>
               <div id="battle-log" class="battle-log"></div>
