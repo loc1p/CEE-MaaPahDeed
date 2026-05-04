@@ -885,6 +885,26 @@ body.theme-light .guitar-guide-meta {
   gap: .65rem;
 }
 
+.song-saved-menu {
+  max-height: calc(76px * 3 + .65rem * 2);
+  overflow-y: auto;
+  padding-right: .25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212,175,55,.55) rgba(10,7,18,.38);
+}
+
+.song-saved-menu::-webkit-scrollbar {
+  width: 7px;
+}
+
+.song-saved-menu::-webkit-scrollbar-track {
+  background: rgba(10,7,18,.38);
+}
+
+.song-saved-menu::-webkit-scrollbar-thumb {
+  background: rgba(212,175,55,.55);
+}
+
 .song-mini-card {
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr) auto;
