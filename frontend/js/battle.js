@@ -1,13 +1,42 @@
 const Battle = {
   noteNames: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
   targets: [
-    { name: 'E', freq: 82.41, octave: 2 },
-    { name: 'A', freq: 110.00, octave: 2 },
-    { name: 'D', freq: 146.83, octave: 3 },
-    { name: 'G', freq: 196.00, octave: 3 },
-    { name: 'B', freq: 246.94, octave: 3 },
-    { name: 'E', freq: 329.63, octave: 4 }
+    { symbol: 'C', notes: ['C', 'E', 'G'] },
+    { symbol: 'G', notes: ['G', 'B', 'D'] },
+    { symbol: 'D', notes: ['D', 'F#', 'A'] },
+    { symbol: 'A', notes: ['A', 'C#', 'E'] },
+    { symbol: 'E', notes: ['E', 'G#', 'B'] },
+    { symbol: 'Am', notes: ['A', 'C', 'E'] },
+    { symbol: 'Em', notes: ['E', 'G', 'B'] },
+    { symbol: 'Dm', notes: ['D', 'F', 'A'] }
   ],
+  guitarStrings: [
+    { label: 'E', note: 'E2', open: 'E', octave: 2 },
+    { label: 'A', note: 'A2', open: 'A', octave: 2 },
+    { label: 'D', note: 'D3', open: 'D', octave: 3 },
+    { label: 'G', note: 'G3', open: 'G', octave: 3 },
+    { label: 'B', note: 'B3', open: 'B', octave: 3 },
+    { label: 'e', note: 'E4', open: 'E', octave: 4 }
+  ],
+  notePositions: {
+    'E2': [{ string: 0, fret: 0, finger: '0' }],
+    'A2': [{ string: 1, fret: 0, finger: '0' }],
+    'D3': [{ string: 2, fret: 0, finger: '0' }],
+    'G3': [{ string: 3, fret: 0, finger: '0' }],
+    'B3': [{ string: 4, fret: 0, finger: '0' }],
+    'E4': [{ string: 5, fret: 0, finger: '0' }]
+  },
+  chordShapes: {
+    C: [{ string: 1, fret: 3, finger: '3' }, { string: 2, fret: 2, finger: '2' }, { string: 4, fret: 1, finger: '1' }],
+    G: [{ string: 0, fret: 3, finger: '2' }, { string: 1, fret: 2, finger: '1' }, { string: 5, fret: 3, finger: '3' }],
+    D: [{ string: 3, fret: 2, finger: '1' }, { string: 4, fret: 3, finger: '3' }, { string: 5, fret: 2, finger: '2' }],
+    A: [{ string: 2, fret: 2, finger: '1' }, { string: 3, fret: 2, finger: '2' }, { string: 4, fret: 2, finger: '3' }],
+    E: [{ string: 2, fret: 2, finger: '2' }, { string: 3, fret: 1, finger: '1' }, { string: 1, fret: 2, finger: '3' }],
+    Am: [{ string: 2, fret: 2, finger: '2' }, { string: 3, fret: 2, finger: '3' }, { string: 4, fret: 1, finger: '1' }],
+    Em: [{ string: 1, fret: 2, finger: '2' }, { string: 2, fret: 2, finger: '3' }],
+    Dm: [{ string: 3, fret: 2, finger: '2' }, { string: 4, fret: 3, finger: '3' }, { string: 5, fret: 1, finger: '1' }],
+    F: [{ string: 0, fret: 1, finger: '1' }, { string: 1, fret: 3, finger: '3' }, { string: 2, fret: 3, finger: '4' }, { string: 3, fret: 2, finger: '2' }, { string: 4, fret: 1, finger: '1' }, { string: 5, fret: 1, finger: '1' }]
+  },
   monsters: [
     { name: 'Dissonant Wraith', icon: 'Eye', lore: 'A creature woven from unresolved tension.', hp: 5 },
     { name: 'Chromatic Specter', icon: 'Moon', lore: 'It shifts between half-steps, never at rest.', hp: 6 },
@@ -66,7 +95,7 @@ const Battle = {
     this.nextNote();
     this.buildVisualizer(44);
     this.updateStats();
-    this.setFeedback('Play one clear guitar note near the microphone.');
+    this.setFeedback('Play the target guitar chord near the microphone.');
 
     if (this.rafId) cancelAnimationFrame(this.rafId);
     this.rafId = requestAnimationFrame(() => this.tick());
@@ -135,16 +164,18 @@ const Battle = {
     }
 
     const pick = this.targets[Math.floor(Math.random() * this.targets.length)];
-    this.target = pick;
-    this.targetChord = null;
+    this.target = null;
+    this.targetChord = pick;
     this.matchHeld = 0;
+    this.recentPlayedNotes = [];
 
-    this.setText('tgt-note', pick.name);
-    this.setText('tgt-hz', `${pick.freq.toFixed(2)} Hz - Octave ${pick.octave}`);
+    this.setText('tgt-note', pick.symbol);
+    this.setText('tgt-hz', `Play chord tones: ${pick.notes.join(' - ')}`);
     this.setText('det-note', '-');
     this.setText('cents-val', '-- cents');
     this.setNeedle(50);
-    this.setFeedback(`Target: play ${pick.name}${pick.octave}.`);
+    this.updateGuitarGuide();
+    this.setFeedback(`Target chord: ${pick.symbol}. Strum or pick its notes clearly.`);
   },
 
   nextSongChord() {
@@ -160,6 +191,7 @@ const Battle = {
     this.setText('det-note', '-');
     this.setText('cents-val', '-- cents');
     this.setNeedle(50);
+    this.updateGuitarGuide();
     this.setFeedback(`Target chord: ${pick.symbol}. Strum or pick its notes clearly.`);
   },
 
@@ -176,6 +208,169 @@ const Battle = {
     if (this.songChordTargets.length) {
       this.nextSongChord();
     }
+  },
+
+  updateGuitarGuide() {
+    const guide = document.getElementById('guitar-guide');
+    if (!guide) return;
+
+    const label = this.targetChord
+      ? `${this.targetChord.symbol} chord shape`
+      : `${this.target.name}${this.target.octave} position`;
+    const positions = this.targetChord
+      ? this.getChordPositions(this.targetChord.symbol)
+      : this.notePositions[`${this.target.name}${this.target.octave}`] || [];
+    const positionText = positions.length
+      ? positions.map(pos => {
+        const stringInfo = this.guitarStrings[pos.string];
+        const fretText = pos.fret === 0 ? 'open' : `fret ${pos.fret}`;
+        return `${stringInfo.label} string: ${fretText}`;
+      }).join(' | ')
+      : 'No shape saved for this target yet.';
+    const frets = this.getDisplayedFrets(positions);
+
+    guide.innerHTML = `
+      <div class="guitar-guide-head">
+        <div>
+          <div class="slbl">Guitar Position</div>
+          <div class="guitar-guide-title">${this.escapeHtml(label)}</div>
+        </div>
+        <div class="guitar-guide-meta">${this.escapeHtml(positionText)}</div>
+      </div>
+      <div class="guitar-neck" aria-label="${this.escapeHtml(label)}">
+        <div class="guitar-nut"></div>
+        ${this.renderFretNumbers(frets)}
+        ${this.guitarStrings
+          .map((stringInfo, index) => ({ stringInfo, index }))
+          .reverse()
+          .map(item => this.renderGuideString(item.stringInfo, item.index, positions, frets))
+          .join('')}
+      </div>
+    `;
+  },
+
+  getChordPositions(symbol) {
+    const clean = this.normalizeChordSymbol(symbol);
+    return this.chordShapes[clean]
+      || this.chordShapes[clean.replace(/[0-9]/g, '')]
+      || this.buildMovableChordShape(clean);
+  },
+
+  normalizeChordSymbol(symbol) {
+    return String(symbol || '')
+      .replace(/\s+/g, '')
+      .replace(/\u266f/g, '#')
+      .replace(/\u266d/g, 'b')
+      .replace(/minor/i, 'm')
+      .replace(/major/i, '')
+      .replace(/^([A-G])B/, '$1b')
+      .trim();
+  },
+
+  buildMovableChordShape(symbol) {
+    const match = String(symbol || '').match(/^([A-G](?:#|b)?)(.*)$/);
+    if (!match) return [];
+
+    const root = match[1];
+    const suffix = match[2].toLowerCase();
+    const rootPc = this.notePc(root);
+    if (rootPc === null) return [];
+
+    const aRootFret = this.fretForRoot(rootPc, 'A');
+    const eRootFret = this.fretForRoot(rootPc, 'E');
+    const preferAShape = aRootFret >= 1 && aRootFret <= 7;
+    const family = preferAShape ? 'A' : 'E';
+    const fret = preferAShape ? aRootFret : eRootFret || 12;
+
+    const quality = this.chordQuality(suffix);
+    return this.barreShape(family, quality, fret);
+  },
+
+  notePc(note) {
+    const match = String(note || '').match(/^([A-G])(#|b)?/i);
+    if (!match) return null;
+
+    const base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[match[1].toUpperCase()];
+    const accidental = match[2] === '#' ? 1 : match[2] === 'b' ? -1 : 0;
+    return (base + accidental + 12) % 12;
+  },
+
+  fretForRoot(rootPc, stringName) {
+    const openPc = stringName === 'A' ? 9 : 4;
+    const fret = (rootPc - openPc + 12) % 12;
+    return fret === 0 ? 12 : fret;
+  },
+
+  chordQuality(suffix) {
+    if (suffix.includes('dim')) return 'dim';
+    if (suffix.includes('aug') || suffix.includes('+')) return 'aug';
+    if (suffix.includes('sus2')) return 'sus2';
+    if (suffix.includes('sus4') || suffix.includes('sus')) return 'sus4';
+    if (suffix.includes('maj7')) return 'maj7';
+    if (suffix.startsWith('m') && suffix.includes('7')) return 'm7';
+    if (suffix.startsWith('m') && suffix.includes('6')) return 'm6';
+    if (suffix.startsWith('m')) return 'm';
+    if (suffix.includes('7')) return '7';
+    if (suffix.includes('6')) return '6';
+    return 'maj';
+  },
+
+  barreShape(family, quality, fret) {
+    const eShapes = {
+      maj: [[0, 0, '1'], [1, 2, '3'], [2, 2, '4'], [3, 1, '2'], [4, 0, '1'], [5, 0, '1']],
+      m: [[0, 0, '1'], [1, 2, '3'], [2, 2, '4'], [3, 0, '1'], [4, 0, '1'], [5, 0, '1']],
+      7: [[0, 0, '1'], [1, 2, '3'], [2, 0, '1'], [3, 1, '2'], [4, 0, '1'], [5, 0, '1']],
+      m7: [[0, 0, '1'], [1, 2, '3'], [2, 0, '1'], [3, 0, '1'], [4, 0, '1'], [5, 0, '1']],
+      maj7: [[0, 0, '1'], [1, 2, '4'], [2, 1, '2'], [3, 1, '3'], [4, 0, '1'], [5, 0, '1']],
+      sus4: [[0, 0, '1'], [1, 2, '2'], [2, 2, '3'], [3, 2, '4'], [4, 0, '1'], [5, 0, '1']]
+    };
+    const aShapes = {
+      maj: [[1, 0, '1'], [2, 2, '2'], [3, 2, '3'], [4, 2, '4'], [5, 0, '1']],
+      m: [[1, 0, '1'], [2, 2, '3'], [3, 2, '4'], [4, 1, '2'], [5, 0, '1']],
+      7: [[1, 0, '1'], [2, 2, '2'], [3, 0, '1'], [4, 2, '3'], [5, 0, '1']],
+      m7: [[1, 0, '1'], [2, 2, '3'], [3, 0, '1'], [4, 1, '2'], [5, 0, '1']],
+      maj7: [[1, 0, '1'], [2, 2, '3'], [3, 1, '2'], [4, 2, '4'], [5, 0, '1']],
+      sus4: [[1, 0, '1'], [2, 2, '2'], [3, 2, '3'], [4, 3, '4'], [5, 0, '1']],
+      dim: [[1, 0, '1'], [2, 1, '2'], [3, 2, '4'], [4, 1, '3']],
+      aug: [[1, 0, '1'], [2, 3, '4'], [3, 2, '3'], [4, 2, '2']]
+    };
+
+    const shapes = family === 'A' ? aShapes : eShapes;
+    const fallbackQuality = quality === '6' || quality === 'm6' || quality === 'sus2' ? (quality.startsWith('m') ? 'm' : 'maj') : quality;
+    const template = shapes[fallbackQuality] || shapes.maj;
+    return template.map(([string, offset, finger]) => ({ string, fret: fret + offset, finger }));
+  },
+
+  getDisplayedFrets(positions) {
+    const pressed = positions.map(pos => pos.fret).filter(fret => fret > 0);
+    if (!pressed.length) return [1, 2, 3, 4, 5];
+
+    const min = Math.min(...pressed);
+    const max = Math.max(...pressed);
+    const start = max <= 5 ? 1 : min;
+    return [0, 1, 2, 3, 4].map(offset => start + offset);
+  },
+
+  renderFretNumbers(frets) {
+    return `<div class="guitar-fret-numbers">
+      <span></span>${frets.map(fret => `<span>${fret}</span>`).join('')}
+    </div>`;
+  },
+
+  renderGuideString(stringInfo, stringIndex, positions, frets) {
+    const openMarker = positions.find(pos => pos.string === stringIndex && pos.fret === 0);
+
+    return `
+      <div class="guitar-string-row">
+        <div class="guitar-string-label">${this.escapeHtml(stringInfo.label)}${openMarker ? '<span class="guitar-open-dot">0</span>' : ''}</div>
+        ${frets.map(fret => {
+          const marker = positions.find(pos => pos.string === stringIndex && pos.fret === fret);
+          return `<div class="guitar-fret-cell">
+            ${marker ? `<span class="guitar-finger">${this.escapeHtml(marker.finger)}</span>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+    `;
   },
 
   async playTargetNote() {

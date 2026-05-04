@@ -340,6 +340,145 @@ body::after {
   line-height: 1.45;
 }
 
+.guitar-guide {
+  width: min(100%, 560px);
+  border: 1px solid rgba(212,175,55,.2);
+  background:
+    linear-gradient(90deg, rgba(95,57,26,.26), rgba(25,13,8,.48)),
+    rgba(6,4,12,.7);
+  padding: .9rem;
+}
+
+.guitar-guide-head {
+  display: flex;
+  justify-content: space-between;
+  gap: .8rem;
+  align-items: flex-start;
+  margin-bottom: .65rem;
+}
+
+.guitar-guide-title {
+  font-family: 'Cinzel', serif;
+  color: var(--gold);
+  font-size: .95rem;
+  letter-spacing: .08em;
+}
+
+.guitar-guide-meta {
+  max-width: 260px;
+  color: #cdbf92;
+  font-family: 'Cutive Mono', monospace;
+  font-size: .68rem;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.guitar-neck {
+  position: relative;
+  display: grid;
+  grid-template-columns: 46px repeat(5, 1fr);
+  border: 1px solid rgba(212,175,55,.26);
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px calc(100% / 6)),
+    linear-gradient(90deg, #2a1308, #4a2411 45%, #261006);
+  overflow: hidden;
+}
+
+.guitar-nut {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 46px;
+  width: 6px;
+  background: #e4d0a4;
+  box-shadow: 0 0 12px rgba(228,208,164,.45);
+  z-index: 2;
+}
+
+.guitar-fret-numbers {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 46px repeat(5, 1fr);
+  color: rgba(244,231,186,.56);
+  font-family: 'Cutive Mono', monospace;
+  font-size: .62rem;
+  min-height: 18px;
+  align-items: center;
+  text-align: center;
+  background: rgba(0,0,0,.22);
+}
+
+.guitar-string-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 46px repeat(5, 1fr);
+  min-height: 30px;
+  position: relative;
+}
+
+.guitar-string-row::after {
+  content: '';
+  position: absolute;
+  left: 46px;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, rgba(238,230,205,.8), rgba(133,123,99,.7));
+  box-shadow: 0 0 5px rgba(238,230,205,.25);
+}
+
+.guitar-string-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: .72rem;
+  background: rgba(0,0,0,.24);
+  z-index: 3;
+}
+
+.guitar-open-dot {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1px solid var(--neon-green);
+  color: var(--neon-green);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .58rem;
+  box-shadow: 0 0 8px rgba(57,255,20,.35);
+}
+
+.guitar-fret-cell {
+  position: relative;
+  border-left: 1px solid rgba(220,196,139,.28);
+  z-index: 3;
+}
+
+.guitar-finger {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 23px;
+  height: 23px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--neon-green);
+  color: #041006;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: .72rem;
+  font-weight: 700;
+  box-shadow: 0 0 14px rgba(57,255,20,.65);
+}
+
+
 .cents-bar-o {
   position: relative;
   height: 10px;
