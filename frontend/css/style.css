@@ -743,3 +743,206 @@ body::after {
 .hr { border-top: 1px solid var(--border-gold); opacity: 0.2; margin: 1.2rem 0; }
 .tc { text-align: center; }
 .mt-sm { margin-top: 0.8rem; }
+
+/* ════════════════════════════════════════════════════
+   CHORD CAM — AIR GUITAR STUDIO MASTER
+════════════════════════════════════════════════════ */
+.cc-hero { margin-bottom: 1.2rem; }
+.cc-hero-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.cc-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(1.9rem, 4vw, 3.4rem);
+  color: var(--gold);
+  line-height: 1;
+  text-shadow: 0 0 28px rgba(212,175,55,.65);
+  letter-spacing: 0;
+}
+.cc-copy {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  color: #7b6a92;
+  margin-top: .8rem;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.cc-controls { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+.cc-controls .btn { min-height: 40px; }
+.cc-controls .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.cc-controls .btn:not(.btn-gold):not(.btn-red) {
+  background: rgba(212,175,55,.08);
+  border: 1px solid var(--border-gold);
+  color: var(--gold);
+}
+.cc-controls .btn-red {
+  background: transparent;
+  border: 1px solid rgba(233,69,96,.45);
+  color: var(--neon-pink);
+}
+.cc-controls .btn-red:hover,
+.cc-controls .btn:not(.btn-gold):not(.btn-red):hover {
+  background: rgba(212,175,55,.12);
+  transform: translateY(-1px);
+}
+.cc-select {
+  background: #0a0712;
+  color: var(--gold);
+  border: 1px solid var(--border-gold);
+  padding: .65rem .8rem;
+  font-family: 'Cinzel', serif;
+  font-size: .65rem;
+  letter-spacing: .08em;
+  outline: none;
+  min-height: 40px;
+}
+.cc-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1.2rem; }
+.cc-camera-panel { min-height: 650px; }
+.cc-camera-inner { padding: .8rem; }
+.cc-camera-stage {
+  height: 630px;
+  position: relative;
+  background: #000;
+  border: 1px solid var(--border-gold);
+  overflow: hidden;
+}
+#cc-video, #cc-overlay { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#cc-video { transform: scaleX(-1); opacity: .82; }
+#cc-overlay { z-index: 3; pointer-events: auto; touch-action: none; }
+.cc-zone-tag {
+  position: absolute;
+  top: 14px;
+  z-index: 5;
+  border: 1px solid var(--border-gold);
+  background: rgba(4,3,10,.72);
+  font-family: 'Cinzel', serif;
+  font-size: .6rem;
+  letter-spacing: .08em;
+  color: var(--gold);
+  padding: .45rem .7rem;
+  text-transform: uppercase;
+}
+.cc-zone-chord { left: 14px; }
+.cc-zone-strum { right: 14px; color: var(--neon-blue); border-color: rgba(0,207,255,.35); }
+.cc-screen-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(212,175,55,.4), transparent);
+  z-index: 4;
+}
+.cc-strum-band {
+  position: absolute;
+  left: 54%;
+  right: 5%;
+  top: 50%;
+  height: 64px;
+  transform: translateY(-50%);
+  background: rgba(255,191,0,.06);
+  border-top: 2px dashed rgba(255,191,0,.75);
+  border-bottom: 2px dashed rgba(255,191,0,.75);
+  z-index: 4;
+  box-shadow: 0 0 20px rgba(255,191,0,.12);
+}
+.cc-guitar-neck {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 32px;
+  height: 112px;
+  z-index: 4;
+  background: #0a0712;
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 0 28px rgba(212,175,55,.12);
+  overflow: hidden;
+}
+.cc-string {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  height: 1px;
+  background: rgba(180,180,220,.7);
+  box-shadow: 0 0 12px rgba(180,180,220,.35);
+}
+.cc-string:nth-child(1) { top: 18px; }
+.cc-string:nth-child(2) { top: 33px; }
+.cc-string:nth-child(3) { top: 48px; height: 1.5px; }
+.cc-string:nth-child(4) { top: 63px; height: 2px; }
+.cc-string:nth-child(5) { top: 78px; height: 2px; }
+.cc-string:nth-child(6) { top: 93px; height: 2.5px; }
+.cc-camera-stage::after {
+  content: 'Keyboard: 1 C · 2 G · 3 D · 4 Am · 5 Em · 6 F';
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+  z-index: 8;
+  font: 600 .62rem Cinzel, serif;
+  letter-spacing: .08em;
+  color: rgba(212,175,55,.62);
+  background: rgba(4,3,10,.55);
+  border: 1px solid rgba(212,175,55,.16);
+  padding: .35rem .55rem;
+  backdrop-filter: blur(6px);
+}
+.cc-current-chord {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 5rem;
+  line-height: 1;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(212,175,55,1), 0 0 50px rgba(212,175,55,.5);
+  animation: goldPulse 3s ease-in-out infinite;
+}
+.cc-chord-hint { font-family: 'IM Fell English', serif; font-style: italic; color: #7b6a92; margin-top: .5rem; }
+.cc-stat-label { font-size: .6rem; letter-spacing: .12em; color: #5e4a76; text-transform: uppercase; margin-bottom: .2rem; }
+.cc-stat-val { font-family: 'IM Fell English', serif; font-size: 1rem; color: #c8b88a; margin-bottom: 1rem; line-height: 1.3; }
+.cc-stat-val.cc-neon {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.45rem;
+  color: var(--neon-green);
+  text-shadow: 0 0 12px rgba(57,255,20,.65);
+}
+.cc-pill-row, .cc-chord-map { display: flex; flex-wrap: wrap; gap: .45rem; }
+.cc-pill {
+  font-family: 'Cinzel', serif;
+  font-size: .55rem;
+  letter-spacing: .08em;
+  padding: .28rem .55rem;
+  border: 1px solid var(--border-dim);
+  color: #6a5590;
+}
+.cc-pill.on { color: #050310; background: var(--gold); border-color: var(--gold); box-shadow: 0 0 15px rgba(212,175,55,.35); }
+.cc-pill.blue { color: #001014; background: var(--neon-blue); border-color: var(--neon-blue); box-shadow: 0 0 12px rgba(0,207,255,.45); }
+.cc-pill.red { color: #120000; background: var(--neon-red); border-color: var(--neon-red); box-shadow: 0 0 14px rgba(255,68,68,.5); }
+.cc-tips { font-size: .75rem; line-height: 1.7; color: #7a668f; }
+.cc-tips strong { color: var(--gold); }
+.cc-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 999;
+  opacity: 0;
+  padding: .75rem 1rem;
+  background: rgba(4,3,10,.82);
+  border: 1px solid var(--border-gold);
+  font-family: 'Cinzel', serif;
+  font-size: .7rem;
+  color: var(--gold);
+  letter-spacing: .08em;
+  transition: .2s;
+  pointer-events: none;
+}
+.cc-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 980px) {
+  .cc-grid { grid-template-columns: 1fr; }
+  .cc-status-panel { order: -1; }
+  .cc-camera-stage { height: 68vh; min-height: 420px; }
+  .cc-controls { justify-content: flex-start; }
+}
+
+@media (max-width: 560px) {
+  .cc-controls, .cc-controls .btn, .cc-select { width: 100%; }
+  .cc-zone-tag { font-size: .5rem; letter-spacing: .04em; padding: .35rem .45rem; }
+  .cc-camera-stage::after { right: 16px; font-size: .52rem; }
+}

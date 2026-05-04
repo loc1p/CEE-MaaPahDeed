@@ -169,49 +169,87 @@
     </div>
   </section>
 
-  <!-- ─── CAMERA (MediaPipe Chord Detection) ─── -->
+  <!-- ─── CAMERA (Air Guitar Studio Master v8) ─── -->
   <section id="menu-camera" class="menu-section">
-    <div class="inst-layout">
-      <div>
-        <div class="section-hd">📷 Webcam Chord Detection — MediaPipe Hands</div>
-        <div class="camera-stage">
-          <video id="cam-video" autoplay playsinline muted></video>
-          <canvas id="cam-canvas"></canvas>
-          <div class="cam-overlay-info" id="cam-chord-overlay">–</div>
+    <section class="cc-hero panel">
+      <div class="p-inner cc-hero-inner">
+        <div>
+          <div class="section-hd">Camera Guitar — Gesture Studio</div>
+          <h1 class="cc-title">Air Guitar Studio Master</h1>
+          <p class="cc-copy">ซ้ายจอจับคอร์ด · ขวาจอดีด · ชูนิ้วตอนดีด = มีเสียง · หุบนิ้วตอนยกมือกลับ = เงียบ</p>
         </div>
-        <div class="cam-status" id="cam-status">Click "Start Camera" to begin hand tracking</div>
-        <div style="display:flex;gap:.6rem;margin-top:.6rem;flex-wrap:wrap">
-          <button class="btn btn-gold" id="cam-start-btn" onclick="Vision.startCamera()">📷 Start Camera</button>
-          <button class="btn btn-red" id="cam-stop-btn" onclick="Vision.stopCamera()" disabled>■ Stop</button>
+        <div class="cc-controls">
+          <button class="btn btn-gold" id="cc-start-btn">◆ เปิดกล้อง / เริ่มเล่น ◆</button>
+          <button class="btn btn-red" id="cc-mute-btn">เสียง: เปิด</button>
+          <button class="btn" id="cc-panic-btn" title="ตัดเสียงทั้งหมดทันที">หยุดเสียงค้าง</button>
+          <button class="btn" id="cc-demo-btn" title="ทดสอบเสียงโดยไม่ใช้กล้อง">ทดสอบเสียง</button>
+          <select id="cc-tone-select" class="cc-select">
+            <option value="acoustic" selected>Steel Acoustic Long</option>
+            <option value="electric">Clean Electric Long</option>
+            <option value="drive">Garage Drive Long</option>
+          </select>
         </div>
-        <div class="section-hd" style="margin-top:1rem">Play Detected Chord</div>
-        <div id="cam-chord-pads" class="chord-grid"></div>
       </div>
-      <aside>
-        <div class="panel"><div class="p-inner">
-          <div class="section-hd">How It Works</div>
-          <div style="font-size:.72rem;color:var(--tmid);line-height:1.8">
-            <strong style="color:var(--text-hi)">Left hand</strong> finger positions → chord shape<br>
-            <strong style="color:var(--text-hi)">Right hand</strong> up/down movement → strum<br><br>
-            <strong style="color:var(--ng)">Green</strong> = finger extended (up)<br>
-            <strong style="color:var(--nk)">Red</strong> = finger bent (down)
+    </section>
+
+    <section class="cc-grid">
+      <div class="panel cc-camera-panel">
+        <div class="p-inner cc-camera-inner">
+          <div class="cc-camera-stage">
+            <video id="cc-video" playsinline muted class="hidden"></video>
+            <canvas id="cc-overlay"></canvas>
+            <div class="cc-zone-tag cc-zone-chord">ซ้ายจอ · CHORD · สีทอง/ชมพู</div>
+            <div class="cc-zone-tag cc-zone-strum">ขวาจอ · STRUM · สีฟ้า</div>
+            <div class="cc-screen-divider"></div>
+            <div class="cc-strum-band"></div>
+            <div class="cc-guitar-neck">
+              <div class="cc-string"></div><div class="cc-string"></div><div class="cc-string"></div>
+              <div class="cc-string"></div><div class="cc-string"></div><div class="cc-string"></div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <aside class="panel cc-status-panel">
+        <div class="p-inner">
+          <div class="section-hd">Now Playing</div>
+          <div class="cc-current-chord" id="cc-chord-name">C</div>
+          <div class="cc-chord-hint" id="cc-chord-hint">ชี้นิ้วเดียว = C</div>
+
           <div class="hr"></div>
+
+          <div class="cc-stat-label">Strum</div>
+          <div class="cc-stat-val cc-neon" id="cc-strum-dir">READY</div>
+          <div class="cc-pill-row">
+            <span class="cc-pill" id="cc-down-pill">DOWN</span>
+            <span class="cc-pill" id="cc-up-pill">UP</span>
+            <span class="cc-pill" id="cc-gate-pill">FINGER GATE</span>
+            <span class="cc-pill" id="cc-mouth-pill">MOUTH DRUM</span>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="cc-stat-label">Tracking</div>
+          <div class="cc-stat-val" id="cc-tracking-text">0 มือ · 0 หน้า</div>
+          <div class="cc-pill-row">
+            <span class="cc-pill" id="cc-chord-hand-pill">Chord Hand</span>
+            <span class="cc-pill" id="cc-strum-hand-pill">Strum Hand</span>
+          </div>
+
+          <div class="hr"></div>
+
           <div class="section-hd">Chord Map</div>
-          <div style="font-family:'Cutive Mono',monospace;font-size:.65rem;color:var(--tmid);line-height:2;background:rgba(0,0,0,.3);padding:.5rem;border-radius:2px">
-            All up &nbsp; → Em<br>
-            Index ↓ → Am<br>
-            Middle ↓ → D<br>
-            Ring ↓ &nbsp; → G<br>
-            Idx+Mid → C<br>
-            All ↓ &nbsp; → Bm
-          </div>
+          <div class="cc-chord-map" id="cc-chord-map"></div>
+
           <div class="hr"></div>
-          <div class="section-hd">Effects (Right Hand)</div>
-          <div id="cam-fx-display" style="font-family:'Cinzel',serif;font-size:.65rem;color:var(--tmid);min-height:2rem;line-height:1.8">None active</div>
-        </div></div>
+
+          <div class="cc-tips" id="cc-tips">
+            <strong>วิธีเล่นเร็ว:</strong> ตอนดีดให้ชูนิ้วอะไรก็ได้ · พอยกกลับให้หุบนิ้ว · อ้าปาก = กลอง · กด 1-6 เปลี่ยนคอร์ด · ลากเมาส์ด้านขวาทดสอบดีด
+          </div>
+        </div>
       </aside>
-    </div>
+    </section>
+    <div class="cc-toast" id="cc-toast"></div>
   </section>
 
 
@@ -265,6 +303,7 @@
 
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous" defer></script>
 <script src="js/audio.js"></script>
 <script src="js/vision.js"></script>
@@ -273,4 +312,3 @@
 <script src="js/battle.js"></script>
 </body>
 </html>
-
