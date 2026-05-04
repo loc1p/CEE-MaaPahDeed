@@ -55,8 +55,14 @@ const App = {
     this.unlockAudio();
 
     const isLogin = document.getElementById('tab-login').classList.contains('active');
-    const username = document.getElementById('auth-username').value;
-    const password = document.getElementById('auth-password').value;
+    const usernameInput = document.getElementById('auth-username');
+    const passwordInput = document.getElementById('auth-password');
+    const submit = document.getElementById('auth-submit');
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+
+    this.setAuthMessage('', '');
+    if (submit) submit.disabled = true;
 
     try {
       const res = await fetch(`${this.baseUrl}/auth/${isLogin ? 'login' : 'register'}`, {
@@ -66,19 +72,32 @@ const App = {
       });
       const data = await res.json();
 
-      if (data.token) {
-        localStorage.setItem('maapah_token', data.token);
-        localStorage.setItem('maapah_user', JSON.stringify(data.user));
-        this.token = data.token;
-        this.user = data.user;
-        this.showApp();
-      } else {
-        alert(data.error || "Authentication failed");
+      if (!res.ok || !data.token) {
+        throw new Error(data.error || 'Authentication failed');
       }
+
+      if (!isLogin) {
+        localStorage.removeItem('maapah_token');
+        localStorage.removeItem('maapah_user');
+        this.token = null;
+        this.user = null;
+        usernameInput.value = '';
+        passwordInput.value = '';
+        this.showAuthTab('login', { keepValues: true });
+        this.setAuthMessage('Register complete. Please sign in with your new account.', 'success');
+        return;
+      }
+
+      localStorage.setItem('maapah_token', data.token);
+      localStorage.setItem('maapah_user', JSON.stringify(data.user));
+      this.token = data.token;
+      this.user = data.user;
+      this.showApp();
     } catch (err) {
       console.error("Auth Error:", err);
-      this.user = { username: username || "Guest" };
-      this.showApp();
+      this.setAuthMessage(err.message || 'Authentication failed', 'error');
+    } finally {
+      if (submit) submit.disabled = false;
     }
   },
 
@@ -284,9 +303,18 @@ const App = {
     this.searchMusic();
   },
 
-  showAuthTab(type) {
+  showAuthTab(type, options = {}) {
     document.getElementById('tab-login').classList.toggle('active', type === 'login');
     document.getElementById('tab-register').classList.toggle('active', type === 'register');
+
+    const username = document.getElementById('auth-username');
+    const password = document.getElementById('auth-password');
+    if (!options.keepValues) {
+      username.value = '';
+      password.value = '';
+    }
+
+    this.setAuthMessage('', '');
 
     const note = document.getElementById('auth-note');
     if (type === 'register') {
@@ -294,6 +322,15 @@ const App = {
     } else {
       note.textContent = "Don't have an account? Switch to Register above.";
     }
+  },
+
+  setAuthMessage(message, type = 'error') {
+    const el = document.getElementById('auth-error');
+    if (!el) return;
+
+    el.textContent = message;
+    el.classList.toggle('hidden', !message);
+    el.classList.toggle('success', type === 'success');
   },
 
   logout() {

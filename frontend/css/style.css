@@ -167,6 +167,51 @@ body.theme-light .song-note::placeholder {
   text-transform: uppercase;
 }
 
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .45rem;
+  margin-bottom: 1.35rem;
+  padding: 4px;
+  border: 1px solid var(--border-gold);
+  background: rgba(212,175,55,.05);
+}
+
+.auth-tab {
+  min-height: 38px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--tmid);
+  font-family: 'Cinzel', serif;
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.auth-tab:hover {
+  color: var(--gold);
+  border-color: rgba(212,175,55,.22);
+}
+
+.auth-tab.active {
+  background: linear-gradient(135deg, rgba(212,175,55,.28), rgba(212,175,55,.12));
+  border-color: var(--border-gold);
+  color: var(--gold);
+  box-shadow: 0 0 16px rgba(212,175,55,.22);
+}
+
+body.theme-light .auth-tabs {
+  background: rgba(156,116,20,.08);
+}
+
+body.theme-light .auth-tab.active {
+  background: linear-gradient(135deg, rgba(156,116,20,.2), rgba(255,255,255,.58));
+  color: #6f4d09;
+}
+
 /* ════════════════════════════════════════════════════
    NAV BAR (Alignment Fix)
 ════════════════════════════════════════════════════ */
@@ -665,6 +710,34 @@ body.theme-light .guitar-string-row::after {
   margin-bottom: 1.5rem;
 }
 
+.auth-input:focus {
+  border-bottom-color: var(--gold);
+  box-shadow: 0 8px 18px -18px rgba(212,175,55,.8);
+}
+
+.auth-error {
+  margin: -.4rem 0 1rem;
+  min-height: 1.35rem;
+  color: var(--neon-pink);
+  font-family: 'Cinzel', serif;
+  font-size: .72rem;
+  line-height: 1.45;
+  text-align: center;
+  letter-spacing: .08em;
+}
+
+.auth-error.success {
+  color: var(--neon-green);
+  text-shadow: 0 0 8px rgba(57,255,20,.28);
+}
+
+.auth-note {
+  margin-top: 1rem;
+  color: var(--tmid);
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
 .btn, .big-btn, .auth-btn {
   font-family: 'Cinzel', serif;
   font-weight: 700;
@@ -680,6 +753,21 @@ body.theme-light .guitar-string-row::after {
   color: #000;
   border: none;
   box-shadow: 0 0 15px rgba(212,175,55,.4);
+}
+
+.auth-btn {
+  width: 100%;
+}
+
+.auth-btn:hover:not(:disabled) {
+  background: var(--gold-bright);
+  transform: translateY(-1px);
+  box-shadow: 0 0 26px rgba(212,175,55,.62);
+}
+
+.auth-btn:disabled {
+  opacity: .68;
+  cursor: wait;
 }
 
 .btn-gold:hover {
