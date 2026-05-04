@@ -1,69 +1,98 @@
-# MaaPahDeed - AI Guitar Ear Training RPG
+# MaaPahDeed
 
-MaaPahDeed is an AI-powered guitar learning web app. Users can create an account, log in, practice guitar pitch in an RPG battle mode, analyze full guitar chords from microphone audio, and use a camera-based Chord Cam experience for interactive guitar practice.
+MaaPahDeed is an AI-powered guitar learning web application built as a Computer Engineering Essential final project. The app helps guitar learners practice chord recognition through an RPG-style Battle mode, camera-based Chord Cam interaction, real song chord lookup, saved song collections, and a small music dashboard.
 
-## Final Project Requirements Covered
+## Features
 
-- User Login: users can register, log in, restore their session, and log out.
-- API Integration: the backend integrates with external APIs including OpenAI audio analysis, MusicBrainz search, and a chords API fallback.
-- AI Feature: Battle mode records guitar audio and sends it to AI for chord analysis.
-- Computer Vision Feature: Chord Cam uses MediaPipe hand/face tracking from the camera to create an interactive guitar experience.
-- Live Deployment Ready: frontend can be deployed as static files, while backend can be deployed as a Node/Express API server.
+- User registration, login, session restore, and logout
+- Battle mode for guitar chord practice
+- Guitar fretboard guide that shows chord finger positions
+- Song Chord Quest that loads chords for real songs
+- Chord Cam using camera-based hand/gesture tracking
+- Saved Songs library with create, read, update, and delete behavior
+- Song Library Dashboard with recent songs, saved songs, and top searched songs
+- Light/Dark theme toggle with saved user preference
+- External API integration for song/chord lookup and music metadata
+- Optional AI audio chord analysis when a valid AI API key is configured
 
-## Main Features
+## Final Project Requirement Mapping
 
-- Account registration and login with JWT authentication
-- Persistent login session using browser storage
-- Guitar Battle mode with real-time pitch detection
-- AI Full Chord analysis from microphone audio
-- Chord matching and feedback using external API/AI integration
-- Chord Cam with camera-based gesture interaction
-- RPG-style UI with score, XP, streaks, monster HP, and battle log
+### Basic Requirements
+
+| Requirement | How MaaPahDeed Meets It |
+| --- | --- |
+| User Login | Users can register an account, log in, stay signed in across refreshes, and log out. Passwords are hashed in the backend. |
+| API Integration | The backend calls external music/chord APIs, including E-Chords/MusicBrainz-style song metadata lookup and chord analysis endpoints. API responses are used directly in Battle and Song Chord Quest. |
+| Deployed & Live | Add the public deployment URL after deployment. The app is designed to run with a deployed static frontend and deployed Node/Express backend. |
+
+### Challenging Requirements
+
+Primary optional tier to claim:
+
+- Tier S - Computer Vision: Chord Cam uses the user's camera and MediaPipe hand/face tracking to understand body/hand movement as interactive guitar input.
+
+Additional implemented features:
+
+- Tier B - Saved / Favorites: users can save songs to their own library, edit notes, reload saved songs, and delete them.
+- Tier B - Dashboard & Data Visualization: Song Library Dashboard shows recent songs, saved songs, and top searched songs from real backend data.
+- Tier C - Dark Mode / Theme Toggle: users can switch between dark mode and light mode, and the browser remembers the selected theme.
+
+The challenging requirement score is capped at 20 points, so one Tier S feature is enough to reach the maximum for that section.
 
 ## Tech Stack
 
 - Frontend: HTML, CSS, JavaScript
 - Backend: Node.js, Express.js
 - Database: MongoDB with Mongoose
-- Authentication: JWT and bcrypt
-- AI/API: OpenAI API, MusicBrainz API, Chords API, optional Gemini fallback
-- Camera/Audio Libraries: MediaPipe Hands, MediaPipe Face Mesh, Web Audio API, Meyda, Pitchy
+- Authentication: JWT, bcryptjs
+- APIs / Libraries: E-Chords style chord lookup, MusicBrainz/Cover Art metadata lookup, Chords API fallback, MediaPipe Hands, MediaPipe Face Mesh, Web Audio API, Pitchy
+- Deployment target: static frontend hosting plus Node backend hosting
 
 ## Project Structure
 
 ```text
 CEE-MaaPahDeed-main/
   backend/
-    server.js
-    package.json
+    models/
+      SongSearch.js
+      User.js
     .env.example
+    package.json
+    server.js
   frontend/
-    index.html
+    audio/
     css/
       style.css
     js/
       app.js
-      battle.js
-      vision.js
       audio.js
+      battle.js
       game.js
+      vision.js
+    index.html
+  README.md
 ```
 
 ## Environment Variables
 
-Create `backend/.env` from `backend/.env.example`.
+Create a private environment file at:
+
+```text
+backend/.env
+```
+
+Use `backend/.env.example` as the template:
 
 ```env
 MONGO_URI=mongodb://127.0.0.1:27017/maapah
 JWT_SECRET=change-this-secret
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
-OPENAI_AUDIO_MODEL=gpt-audio
 GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
-Do not commit `backend/.env`. It contains private API keys.
+Important: do not commit `backend/.env`. API keys and secrets must stay private.
 
 ## Local Setup
 
@@ -74,19 +103,26 @@ cd backend
 npm install
 ```
 
-### 2. Configure environment variables
+### 2. Create environment file
 
-Copy the example environment file:
+On Windows PowerShell:
 
-```bash
-copy .env.example .env
+```powershell
+Copy-Item .env.example .env
 ```
 
-Then edit `backend/.env` and add your MongoDB URI, JWT secret, and API keys.
+Then edit `backend/.env` and set:
+
+- `MONGO_URI`
+- `JWT_SECRET`
+- optional AI API keys if using audio AI analysis
 
 ### 3. Start MongoDB
 
-Use a local MongoDB server or a MongoDB Atlas connection string.
+Use either:
+
+- local MongoDB at `mongodb://127.0.0.1:27017/maapah`
+- MongoDB Atlas connection string in `MONGO_URI`
 
 ### 4. Run the backend
 
@@ -94,7 +130,7 @@ Use a local MongoDB server or a MongoDB Atlas connection string.
 npm run dev
 ```
 
-The backend runs on:
+Backend default URL:
 
 ```text
 http://localhost:5001
@@ -108,100 +144,82 @@ http://localhost:5001/api/health
 
 ### 5. Open the frontend
 
-Open this file in a browser:
+Recommended local URL:
 
 ```text
-frontend/index.html
+http://localhost:5001
 ```
 
-For microphone and camera features, use `localhost` or HTTPS. Some browsers block camera/microphone access from plain file URLs.
+The backend serves the frontend from the `frontend/` folder. Camera and microphone features work best on `localhost` or HTTPS.
 
-## Frontend API URL
+## Useful API Routes
 
-The frontend API base URL is set in:
-
-```text
-frontend/js/app.js
-```
-
-For local development:
-
-```js
-baseUrl: 'http://localhost:5001/api'
-```
-
-For deployment, change it to your deployed backend URL, for example:
-
-```js
-baseUrl: 'https://your-backend-url.onrender.com/api'
-```
-
-## API Endpoints
-
-### Authentication
+### Auth
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `GET /api/auth/me`
 
-### User Data
+### Song / Music
 
-- `PATCH /api/user/progress`
-- `GET /api/leaderboard`
+- `GET /api/music/song-chords?artist=<artist>&song=<song>`
+- `GET /api/music/library`
+- `POST /api/music/library`
+- `PATCH /api/music/library/:songKey`
+- `DELETE /api/music/library/:songKey`
+- `GET /api/music/top-searches`
 
-### Music and Chords
+### Chords / Battle
 
-- `GET /api/music/search`
-- `GET /api/music/key-suggest`
 - `POST /api/chords/analyze`
 - `POST /api/chords/analyze-audio`
 
-## External API Integration
+### Other
 
-This project uses external APIs meaningfully in the core guitar learning flow:
-
-- OpenAI API: analyzes recorded guitar chord audio and returns chord feedback.
-- MusicBrainz API: searches real music metadata.
-- Chords API: provides chord data for matching detected notes to possible chords.
-
-If OpenAI returns HTTP 429, the API key has likely reached a quota or rate limit. Wait for the quota to reset, reduce requests, or use another valid key.
+- `GET /api/leaderboard`
+- `GET /api/health`
 
 ## Deployment Notes
 
-Recommended deployment setup:
+Recommended deployment:
 
-- Frontend: Vercel, Netlify, or GitHub Pages
-- Backend: Render, Railway, or Fly.io
+- Frontend and backend together: Render, Railway, or similar Node hosting
 - Database: MongoDB Atlas
+- Environment variables: set them in the hosting dashboard
 
-Backend environment variables must be added in the hosting provider dashboard. Do not put API keys directly in frontend code.
+After deployment, update this section:
 
-After deploying the backend, update `frontend/js/app.js` so `baseUrl` points to the public backend API URL.
+- Live URL: TODO
+- Backend URL: TODO
+- GitHub URL: https://github.com/loc1p/CEE-MaaPahDeed
 
 ## Demo Checklist
 
-For the final project video, demonstrate:
+Use this checklist for the final video:
 
-- Open the deployed public URL in a fresh browser tab
+- Open the public live URL from a fresh browser tab
 - Register a new user
-- Log out and log back in
-- Start Battle mode
-- Allow microphone access
-- Play or strum a guitar note/chord
-- Show real-time pitch detection
-- Use `AI Full Chord 3s`
-- Show the AI/API response being used in the app
-- Open Chord Cam and demonstrate camera interaction
-- Explain the claimed Tier S feature: Speech / Audio AI and Computer Vision
+- Log out
+- Log back in
+- Search for a real song in Song Chord Quest
+- Show the external API result being used as Battle chord targets
+- Play Battle mode and show the fretboard chord guide
+- Open Chord Cam and show camera-based interaction
+- Save a song
+- Refresh the page and show the saved song still exists
+- Edit a saved song note
+- Delete a saved song
+- Show Song Library Dashboard / top searched songs
+- Switch between Light and Dark mode
 
 ## Team Members
 
-- Add team member 1
-- Add team member 2
-- Add team member 3
+- TODO: team member 1
+- TODO: team member 2
+- TODO: team member 3
 
-## GitHub and Live URL
+## Links
 
 - GitHub: https://github.com/loc1p/CEE-MaaPahDeed
-- Live URL: add deployed frontend URL here
-- Backend URL: add deployed backend URL here
+- Live URL: TODO
+- Video URL: TODO

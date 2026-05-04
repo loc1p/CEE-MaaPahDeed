@@ -20,6 +20,25 @@
   --tmid: #4a3a60;
 }
 
+body.theme-light {
+  --gold: #9c7414;
+  --gold-dim: #7c641f;
+  --gold-bright: #c99422;
+  --crimson: #b3342a;
+  --neon-green: #167c2f;
+  --neon-blue: #086f9d;
+  --neon-purple: #6840a0;
+  --neon-amber: #b77a00;
+  --neon-red: #bd2f2f;
+  --neon-pink: #b83356;
+  --deep: #f2eee4;
+  --surface: rgba(255, 251, 241, .94);
+  --border-gold: rgba(156, 116, 20, .32);
+  --border-dim: rgba(156, 116, 20, .16);
+  --text: #32283f;
+  --tmid: #786b83;
+}
+
 /* ════════════════════════════════════════════════════
    RESET & BASE
 ════════════════════════════════════════════════════ */
@@ -42,6 +61,14 @@ body {
   overflow-x: hidden;
   line-height: 1.5; /* แก้ตัวอักษรลอยด้วยการคุม line-height */
   -webkit-font-smoothing: antialiased;
+}
+
+body.theme-light::after {
+  opacity: .018;
+}
+
+body.theme-light #bg-canvas {
+  opacity: .05;
 }
 
 /* ════════════════════════════════════════════════════
@@ -88,6 +115,19 @@ body::after {
   padding: 3rem 2.5rem;
   position: relative;
   text-align: center;
+}
+
+body.theme-light .auth-input,
+body.theme-light .cc-select,
+body.theme-light .song-note {
+  background: rgba(255,255,255,.74);
+  color: #32283f;
+  border-color: rgba(156,116,20,.34);
+}
+
+body.theme-light .auth-input::placeholder,
+body.theme-light .song-note::placeholder {
+  color: #8a7c91;
 }
 
 /* มุมกล่อง */
@@ -144,6 +184,11 @@ body::after {
   gap: 0.5rem;
 }
 
+body.theme-light #nav-bar {
+  background: rgba(255, 251, 241, .96);
+  box-shadow: 0 8px 24px rgba(88, 64, 20, .08);
+}
+
 .nav-logo {
   font-family: 'Cinzel Decorative', serif;
   font-size: 1rem;
@@ -187,6 +232,25 @@ body::after {
 }
 
 .nav-spacer { flex: 1; }
+
+.theme-toggle {
+  min-width: 72px;
+  height: 32px;
+  border: 1px solid var(--border-gold);
+  background: rgba(212, 175, 55, .08);
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: .62rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+
+.theme-toggle:hover {
+  background: rgba(212, 175, 55, .16);
+  box-shadow: 0 0 14px rgba(212, 175, 55, .22);
+}
 
 .nav-user {
   font-family: 'Cinzel', serif;
@@ -242,6 +306,24 @@ body::after {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--border-gold);
+}
+
+body.theme-light .panel,
+body.theme-light .battle-readout,
+body.theme-light .battle-feedback,
+body.theme-light .chord-analysis,
+body.theme-light .song-stat,
+body.theme-light .song-list-card,
+body.theme-light .song-chart-card,
+body.theme-light .auth-box,
+body.theme-light .login-box {
+  background: rgba(255, 251, 241, .92);
+  box-shadow: 0 16px 36px rgba(93, 68, 28, .08);
+}
+
+body.theme-light #auth-overlay,
+body.theme-light #login-overlay {
+  background: radial-gradient(ellipse at 50% 40%, #fff9e8 0%, #e8ddc9 100%);
 }
 
 .p-inner {
@@ -349,6 +431,12 @@ body::after {
   padding: .9rem;
 }
 
+body.theme-light .guitar-guide {
+  background:
+    linear-gradient(90deg, rgba(212, 175, 88, .18), rgba(255, 250, 238, .76)),
+    rgba(255, 251, 241, .92);
+}
+
 .guitar-guide-head {
   display: flex;
   justify-content: space-between;
@@ -384,6 +472,12 @@ body::after {
   overflow: hidden;
 }
 
+body.theme-light .guitar-neck {
+  background:
+    repeating-linear-gradient(90deg, rgba(89,67,38,.12) 0 1px, transparent 1px calc(100% / 6)),
+    linear-gradient(90deg, #d8b985, #f0d9ad 45%, #c99652);
+}
+
 .guitar-nut {
   position: absolute;
   top: 0;
@@ -408,6 +502,11 @@ body::after {
   background: rgba(0,0,0,.22);
 }
 
+body.theme-light .guitar-fret-numbers,
+body.theme-light .guitar-string-label {
+  background: rgba(112, 78, 30, .12);
+}
+
 .guitar-string-row {
   grid-column: 1 / -1;
   display: grid;
@@ -426,6 +525,10 @@ body::after {
   transform: translateY(-50%);
   background: linear-gradient(90deg, rgba(238,230,205,.8), rgba(133,123,99,.7));
   box-shadow: 0 0 5px rgba(238,230,205,.25);
+}
+
+body.theme-light .guitar-string-row::after {
+  background: linear-gradient(90deg, rgba(55,49,39,.78), rgba(122,107,84,.68));
 }
 
 .guitar-string-label {
@@ -697,6 +800,11 @@ body::after {
   min-height: 76px;
 }
 
+body.theme-light .song-mini-card,
+body.theme-light .song-chart-row {
+  background: rgba(255,255,255,.58);
+}
+
 .song-cover {
   width: 56px;
   aspect-ratio: 1;
@@ -784,6 +892,10 @@ body::after {
   color: #c8b88a;
   font-size: .7rem;
   line-height: 1.35;
+}
+
+body.theme-light .song-chart-label {
+  color: #5a4830;
 }
 
 .song-chart-label span {

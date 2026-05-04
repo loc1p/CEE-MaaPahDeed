@@ -5,11 +5,29 @@ const App = {
   cachedUser: JSON.parse(localStorage.getItem('maapah_user') || 'null'),
   currentMenu: 'battle',
   currentSongResult: null,
+  theme: localStorage.getItem('maapah_theme') || 'dark',
 
   unlockAudio() {
     if (typeof AudioEngine !== 'undefined') {
       AudioEngine.init();
     }
+  },
+
+  applyTheme() {
+    document.body.classList.toggle('theme-light', this.theme === 'light');
+    document.body.classList.toggle('theme-dark', this.theme !== 'light');
+
+    const toggle = document.getElementById('theme-toggle');
+    if (toggle) {
+      toggle.textContent = this.theme === 'light' ? 'Dark' : 'Light';
+      toggle.setAttribute('aria-label', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+    }
+  },
+
+  toggleTheme() {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('maapah_theme', this.theme);
+    this.applyTheme();
   },
 
   switchMenu(menuId) {
@@ -306,5 +324,6 @@ App.escapeHtml = function escapeHtml(value) {
 
 window.addEventListener('load', () => {
   console.log("MaaPahDeed Ready");
+  App.applyTheme();
   App.restoreSession();
 });
