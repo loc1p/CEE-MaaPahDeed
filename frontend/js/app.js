@@ -181,6 +181,7 @@ const App = {
         ${data.coverUrl ? `<img class="song-result-cover" src="${this.escapeHtml(data.coverUrl)}" alt="">` : ''}
         <div class="chord-analysis-title">${this.escapeHtml(data.song)} <span>${this.escapeHtml(data.key || 'key ?')}</span></div>
         <div class="chord-analysis-meta">${this.escapeHtml(data.artist)} - ${this.escapeHtml(data.chords.length)} chords loaded</div>
+        <div class="chord-analysis-meta">Powered by E-Chords</div>
         ${sourceNote}
         <div class="chord-analysis-meta">${data.chords.map(chord => this.escapeHtml(chord.symbol)).join(' - ')}</div>
       `;
@@ -245,7 +246,7 @@ const App = {
         <span class="song-rank">#${index + 1}</span>
         ${song.coverUrl ? `<img class="song-cover song-cover-sm" src="${this.escapeHtml(song.coverUrl)}" alt="">` : '<div class="song-cover song-cover-sm song-cover-empty">♪</div>'}
         <div class="song-chart-main">
-          <div class="song-chart-label">${this.escapeHtml(song.song)} <span>${this.escapeHtml(song.artist)}</span></div>
+          <div class="song-chart-label">${this.escapeHtml(song.song)}, <span>${this.escapeHtml(song.artist)}</span></div>
           <div class="song-chart-track"><div class="song-chart-fill" style="width:${Math.max(8, Math.round((song.count || 0) / max * 100))}%"></div></div>
         </div>
         <span class="song-count">${song.count || 0}</span>

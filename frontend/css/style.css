@@ -854,6 +854,15 @@ body.theme-light .guitar-guide-meta {
   border: 1px solid rgba(212,175,55,.28);
 }
 
+.song-credit {
+  margin-top: .45rem;
+  color: var(--tmid);
+  font-family: 'Cutive Mono', monospace;
+  font-size: .62rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
 .song-dashboard-panel {
   margin-top: 1.2rem;
 }
