@@ -1971,6 +1971,80 @@ body.theme-light .song-chart-label {
 }
 
 @media (max-width: 980px) {
+  #nav-bar {
+    position: sticky;
+    height: auto;
+    min-height: 64px;
+    flex-wrap: wrap;
+    align-content: center;
+    padding: .65rem .75rem;
+    gap: .45rem;
+  }
+
+  .nav-logo {
+    width: 100%;
+    margin: 0 0 .2rem;
+    justify-content: center;
+  }
+
+  .nav-btn {
+    height: 38px;
+    flex: 1 1 120px;
+    justify-content: center;
+    padding: 0 .7rem;
+    border: 1px solid rgba(212,175,55,.12);
+  }
+
+  .nav-btn.active::after {
+    left: 8px;
+    right: 8px;
+  }
+
+  .nav-spacer {
+    display: none;
+  }
+
+  .theme-toggle,
+  .nav-logout {
+    flex: 1 1 92px;
+    height: 36px;
+  }
+
+  .nav-user {
+    flex: 1 1 100%;
+    order: 9;
+    text-align: center;
+  }
+
+  #app {
+    padding: 1rem .75rem 2rem;
+  }
+
+  .battle-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .battle-grid > aside:first-child {
+    order: 2;
+  }
+
+  .battle-grid > section {
+    order: 1;
+  }
+
+  .battle-grid > aside:last-child {
+    order: 3;
+  }
+
+  .battle-center {
+    min-height: auto;
+  }
+
+  .song-dashboard-panel {
+    margin-top: 1rem;
+  }
+
   .song-dashboard-grid { grid-template-columns: 1fr; }
   .cc-grid { grid-template-columns: 1fr; }
   .cc-status-panel { order: -1; }
@@ -1979,13 +2053,181 @@ body.theme-light .song-chart-label {
 }
 
 @media (max-width: 560px) {
+  html {
+    font-size: 15px;
+  }
+
+  .auth-box,
+  .login-box {
+    width: min(92vw, 390px);
+    padding: 2rem 1.2rem;
+  }
+
+  .auth-title,
+  .login-title {
+    font-size: 2rem;
+  }
+
+  .auth-subtitle,
+  .login-sub {
+    letter-spacing: .22em;
+  }
+
+  .auth-input {
+    font-size: 1rem;
+    letter-spacing: .12em;
+  }
+
+  .p-inner {
+    padding: 1rem;
+  }
+
+  .panel {
+    width: 100%;
+  }
+
+  .battle-grid > aside:first-child .p-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: .9rem;
+    align-items: start;
+  }
+
+  .battle-grid > aside:first-child .level-ring,
+  .battle-grid > aside:first-child .pip-row,
+  .battle-grid > aside:first-child .rune-row {
+    grid-column: 1 / -1;
+  }
+
+  .battle-grid > aside:first-child .hr {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .monster-row {
+    align-items: flex-start;
+    gap: .75rem;
+  }
+
+  .monster-icon {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+  }
+
+  .monster-name {
+    font-size: 1.05rem;
+  }
+
+  .target-display {
+    font-size: clamp(3rem, 22vw, 4.6rem);
+    margin: .4rem 0;
+  }
+
+  .target-hz {
+    overflow-wrap: anywhere;
+  }
+
+  .battle-readout {
+    width: 100%;
+    padding: .85rem;
+  }
+
+  .battle-readout.compact {
+    width: 100%;
+    min-height: 104px;
+  }
+
+  .battle-meter-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .65rem;
+  }
+
+  .battle-action-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .battle-action-row .btn {
+    width: 100%;
+    min-height: 42px;
+    padding: .7rem .45rem;
+    letter-spacing: .08em;
+    font-size: .62rem;
+  }
+
+  .guitar-guide {
+    width: 100%;
+    padding: .7rem;
+    overflow-x: auto;
+  }
+
+  .guitar-guide-head {
+    display: grid;
+    gap: .55rem;
+  }
+
+  .guitar-guide-meta {
+    max-width: none;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .guitar-neck {
+    min-width: 520px;
+  }
+
+  .viz-wrap {
+    width: 100%;
+    min-height: 50px;
+  }
+
+  .combat-log,
+  .battle-log-wrap {
+    width: 100%;
+  }
+
   .song-dashboard-head { align-items: stretch; }
   .song-dashboard-head .btn { width: 100%; }
   .song-mini-card { grid-template-columns: 48px minmax(0, 1fr) auto; }
   .song-cover { width: 48px; }
   .song-chart-row { grid-template-columns: 28px 36px minmax(0, 1fr) 32px; }
   .song-cover-sm { width: 36px; }
+  .song-dashboard-panel {
+    margin-inline: 0;
+  }
   .cc-controls, .cc-controls .btn, .cc-select { width: 100%; }
+  .cc-hero-inner {
+    display: grid;
+  }
+  .cc-title {
+    font-size: 2rem;
+  }
+  .cc-camera-panel {
+    min-height: auto;
+  }
+  .cc-camera-stage {
+    height: 58vh;
+    min-height: 320px;
+  }
   .cc-zone-tag { font-size: .5rem; letter-spacing: .04em; padding: .35rem .45rem; }
   .cc-camera-stage::after { right: 16px; font-size: .52rem; }
+}
+
+@media (max-width: 390px) {
+  .battle-action-row {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-btn,
+  .theme-toggle,
+  .nav-logout {
+    flex-basis: 100%;
+  }
+
+  .guitar-neck {
+    min-width: 480px;
+  }
 }
