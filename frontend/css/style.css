@@ -477,9 +477,10 @@ body.theme-light #login-overlay {
 }
 
 body.theme-light .guitar-guide {
+  border-color: rgba(156,116,20,.28);
   background:
-    linear-gradient(90deg, rgba(212, 175, 88, .18), rgba(255, 250, 238, .76)),
-    rgba(255, 251, 241, .92);
+    linear-gradient(90deg, rgba(255,248,226,.96), rgba(245,232,204,.92)),
+    rgba(255,251,241,.94);
 }
 
 .guitar-guide-head {
@@ -490,11 +491,26 @@ body.theme-light .guitar-guide {
   margin-bottom: .65rem;
 }
 
+body.theme-light .guitar-guide-head {
+  padding: .65rem;
+  background: rgba(255, 248, 226, .94);
+  border: 1px solid rgba(156,116,20,.24);
+}
+
 .guitar-guide-title {
   font-family: 'Cinzel', serif;
-  color: var(--gold);
+  color: #d4af37;
   font-size: .95rem;
   letter-spacing: .08em;
+}
+
+body.theme-light .guitar-guide-title {
+  display: inline-block;
+  margin-top: .2rem;
+  padding: .32rem .55rem;
+  background: rgba(255, 248, 226, .92);
+  border: 1px solid rgba(156,116,20,.24);
+  color: #7c641f;
 }
 
 .guitar-guide-meta {
@@ -506,6 +522,13 @@ body.theme-light .guitar-guide {
   text-align: right;
 }
 
+body.theme-light .guitar-guide-meta {
+  padding: .38rem .55rem;
+  background: rgba(255, 248, 226, .92);
+  border: 1px solid rgba(156,116,20,.24);
+  color: #4f3a17;
+}
+
 .guitar-neck {
   position: relative;
   display: grid;
@@ -515,12 +538,6 @@ body.theme-light .guitar-guide {
     repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px calc(100% / 6)),
     linear-gradient(90deg, #2a1308, #4a2411 45%, #261006);
   overflow: hidden;
-}
-
-body.theme-light .guitar-neck {
-  background:
-    repeating-linear-gradient(90deg, rgba(89,67,38,.12) 0 1px, transparent 1px calc(100% / 6)),
-    linear-gradient(90deg, #d8b985, #f0d9ad 45%, #c99652);
 }
 
 .guitar-nut {
@@ -547,11 +564,6 @@ body.theme-light .guitar-neck {
   background: rgba(0,0,0,.22);
 }
 
-body.theme-light .guitar-fret-numbers,
-body.theme-light .guitar-string-label {
-  background: rgba(112, 78, 30, .12);
-}
-
 .guitar-string-row {
   grid-column: 1 / -1;
   display: grid;
@@ -570,10 +582,6 @@ body.theme-light .guitar-string-label {
   transform: translateY(-50%);
   background: linear-gradient(90deg, rgba(238,230,205,.8), rgba(133,123,99,.7));
   box-shadow: 0 0 5px rgba(238,230,205,.25);
-}
-
-body.theme-light .guitar-string-row::after {
-  background: linear-gradient(90deg, rgba(55,49,39,.78), rgba(122,107,84,.68));
 }
 
 .guitar-string-label {
