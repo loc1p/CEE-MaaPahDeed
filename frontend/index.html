@@ -1,0 +1,271 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MaaPahDeed — Ensemble RPG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Special+Elite&family=Cutive+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ════ AUTH OVERLAY ════ -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="lc lc-tl"></div><div class="lc lc-tr"></div>
+    <div class="lc lc-bl"></div><div class="lc lc-br"></div>
+    <div class="auth-title">MaaPahDeed</div>
+    <div class="auth-subtitle">ENSEMBLE RPG · STUDIO MASTER</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="App.showAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="tab-register" onclick="App.showAuthTab('register')">Register</button>
+    </div>
+    <form id="auth-form" onsubmit="App.handleAuth(event)">
+      <input type="text" id="auth-username" class="auth-input" placeholder="Username" autocomplete="username" required>
+      <input type="password" id="auth-password" class="auth-input" placeholder="Password" autocomplete="current-password" required>
+      <div id="auth-error" class="auth-error hidden"></div>
+      <button type="submit" class="auth-btn" id="auth-submit">◆ ENTER THE STUDIO ◆</button>
+    </form>
+    <div class="auth-note" id="auth-note">Don't have an account? Switch to Register above.</div>
+  </div>
+</div>
+<!-- ════ NAV (Updated: No Rhythm) ════ -->
+<nav id="nav-bar" class="hidden">
+  <span class="nav-logo">◆ MaaPahDeed</span>
+  <button class="nav-btn active" data-menu="battle"    onclick="App.switchMenu('battle')">⚔ Battle</button>
+  <button class="nav-btn"        data-menu="camera"    onclick="App.switchMenu('camera')">📷 Chord Cam</button>
+  <span class="nav-spacer"></span>
+  <span class="nav-user" id="nav-user"></span>
+  <button class="nav-logout" onclick="App.logout()">LOG OUT</button>
+</nav>
+<!-- ════ APP ════ -->
+<div id="app" class="hidden">
+
+  <!-- ─── BATTLE (Ear Training RPG) ─── -->
+  <section id="menu-battle" class="menu-section active">
+    <div class="battle-grid">
+      <aside class="panel">
+        <div class="p-inner">
+          <div class="level-ring" id="battle-level">1</div>
+          <div class="slbl">Artist</div>
+          <div class="sval" id="battle-username">—</div>
+          <div class="slbl">Score</div>
+          <div class="sval"><span class="acg" id="battle-score">0</span> pts</div>
+          <div class="slbl">Streak</div>
+          <div class="sval"><span class="acg" id="battle-streak">0</span>× combo</div>
+          <div class="slbl">XP</div>
+          <div class="bar-o"><div class="bar-f bar-gold" id="battle-xp-bar" style="width:0%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--tmid)"><span id="xp-cur">0</span><span id="xp-max">100</span></div>
+          <div class="hr"></div>
+          <div class="slbl">Monsters Defeated</div>
+          <div class="sval"><span class="acg" id="battle-monsters">0</span></div>
+          <div class="hr"></div>
+          <div class="slbl">Hit History</div>
+          <div class="pip-row" id="pip-row"></div>
+          <div class="hr"></div>
+          <div class="slbl">Rune Seals</div>
+          <div class="rune-row" id="rune-row"></div>
+        </div>
+      </aside>
+
+      <section class="panel">
+        <div class="p-inner battle-center">
+          <div id="battle-start-screen">
+            <div class="battle-quote">"Sing the note that slays the beast. The perfect pitch is thy only weapon…"</div>
+            <div id="battle-mic-err" class="auth-error hidden">Microphone access denied. Please allow and refresh.</div>
+            <button class="big-btn" onclick="Game.initBattle()">◆ BEGIN THE QUEST ◆</button>
+          </div>
+          <div id="battle-game" class="hidden">
+            <div class="monster-row">
+              <div class="monster-icon" id="m-icon">👁</div>
+              <div class="monster-info">
+                <div class="monster-name" id="m-name">Dissonant Wraith</div>
+                <div class="monster-lore" id="m-lore">"A creature woven from unresolved tension…"</div>
+                <div class="slbl mt-sm">Enemy Resolve</div>
+                <div class="bar-o bar-red-o"><div class="bar-f bar-red" id="m-hp" style="width:100%"></div></div>
+              </div>
+            </div>
+            <div class="target-note-section">
+              <div class="slbl">✦ Sing This Note ✦</div>
+              <div class="target-display" id="tgt-note">A</div>
+              <div class="target-hz" id="tgt-hz">440 Hz · Octave 4</div>
+            </div>
+            <div class="viz-wrap" id="battle-viz"></div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:2rem">
+              <div>
+                <div class="det-display" id="det-note">–</div>
+                <div class="slbl tc">Detected</div>
+              </div>
+              <div style="flex:1;max-width:200px">
+                <div class="slbl tc">Tuning</div>
+                <div class="cents-bar-o"><div class="cents-center"></div><div class="cents-needle" id="cents-needle" style="left:50%"></div></div>
+                <div class="slbl tc" id="cents-val">-- ¢</div>
+              </div>
+            </div>
+            <div class="battle-feedback" id="battle-fb">Hum into the microphone…</div>
+            <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
+              <button class="btn btn-gold" onclick="Game.btlHearNote()">▶ Hear Note</button>
+              <button class="btn btn-gold" onclick="Game.btlNext()">↻ New Note</button>
+              <button class="btn btn-red"  onclick="Game.btlReset()">✕ Flee</button>
+            </div>
+            <div class="battle-log-wrap">
+              <div class="slbl">◆ Combat Chronicle</div>
+              <div id="battle-log" class="battle-log"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="p-inner">
+          <div class="section-hd">Current Foe</div>
+          <div class="slbl">Monster</div>
+          <div class="sval" style="color:var(--nk)" id="sb-monster">Dissonant Wraith</div>
+          <div class="slbl">Weakness</div>
+          <div class="sval" id="sb-weakness">Pure Octave</div>
+          <div class="slbl">HP Left</div>
+          <div class="sval"><span class="acg" id="sb-hp">5</span></div>
+          <div class="hr"></div>
+          <div class="section-hd">Quests</div>
+          <div class="quest-item"><div class="quest-title">The Forbidden Interval</div><div class="quest-desc">Identify the tritone hidden within the chord of shadows.</div></div>
+          <div class="quest-item"><div class="quest-title">Perfect Fifth</div><div class="quest-desc">Match 10 notes in a row to unlock the Bard's Rune.</div></div>
+          <div class="hr"></div>
+          <div class="section-hd">MusicBrainz Search</div>
+          <input type="text" id="mb-search" class="auth-input" placeholder="Artist or song title…" style="margin-bottom:.4rem">
+          <button class="btn btn-gold btn-sm" onclick="App.searchMusic()">Search</button>
+          <div id="mb-results" class="mb-results"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+
+  <!-- ─── RHYTHM (Chords + Strums) ─── -->
+  <section id="menu-rhythm" class="menu-section">
+    <div class="inst-layout">
+      <div>
+        <div class="section-hd">🎵 Rhythm Guitar — Chords & Progressions</div>
+        <div class="chord-grid chord-grid-lg" id="rhythm-chords"></div>
+        <div class="section-hd" style="margin-top:1rem">Strum Patterns</div>
+        <div id="strum-list"></div>
+        <div class="section-hd" style="margin-top:1rem">Chord Progressions</div>
+        <div id="prog-list"></div>
+      </div>
+      <aside>
+        <div class="panel"><div class="p-inner">
+          <div class="section-hd">Mic Monitor</div>
+          <div class="viz-wrap" id="rhythm-viz"></div>
+          <div class="det-display tc" id="rhythm-det">–</div>
+          <div class="hr"></div>
+          <div class="section-hd">Bass Lines</div>
+          <div id="bass-list"></div>
+        </div></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ─── CAMERA (MediaPipe Chord Detection) ─── -->
+  <section id="menu-camera" class="menu-section">
+    <div class="inst-layout">
+      <div>
+        <div class="section-hd">📷 Webcam Chord Detection — MediaPipe Hands</div>
+        <div class="camera-stage">
+          <video id="cam-video" autoplay playsinline muted></video>
+          <canvas id="cam-canvas"></canvas>
+          <div class="cam-overlay-info" id="cam-chord-overlay">–</div>
+        </div>
+        <div class="cam-status" id="cam-status">Click "Start Camera" to begin hand tracking</div>
+        <div style="display:flex;gap:.6rem;margin-top:.6rem;flex-wrap:wrap">
+          <button class="btn btn-gold" id="cam-start-btn" onclick="Vision.startCamera()">📷 Start Camera</button>
+          <button class="btn btn-red" id="cam-stop-btn" onclick="Vision.stopCamera()" disabled>■ Stop</button>
+        </div>
+        <div class="section-hd" style="margin-top:1rem">Play Detected Chord</div>
+        <div id="cam-chord-pads" class="chord-grid"></div>
+      </div>
+      <aside>
+        <div class="panel"><div class="p-inner">
+          <div class="section-hd">How It Works</div>
+          <div style="font-size:.72rem;color:var(--tmid);line-height:1.8">
+            <strong style="color:var(--text-hi)">Left hand</strong> finger positions → chord shape<br>
+            <strong style="color:var(--text-hi)">Right hand</strong> up/down movement → strum<br><br>
+            <strong style="color:var(--ng)">Green</strong> = finger extended (up)<br>
+            <strong style="color:var(--nk)">Red</strong> = finger bent (down)
+          </div>
+          <div class="hr"></div>
+          <div class="section-hd">Chord Map</div>
+          <div style="font-family:'Cutive Mono',monospace;font-size:.65rem;color:var(--tmid);line-height:2;background:rgba(0,0,0,.3);padding:.5rem;border-radius:2px">
+            All up &nbsp; → Em<br>
+            Index ↓ → Am<br>
+            Middle ↓ → D<br>
+            Ring ↓ &nbsp; → G<br>
+            Idx+Mid → C<br>
+            All ↓ &nbsp; → Bm
+          </div>
+          <div class="hr"></div>
+          <div class="section-hd">Effects (Right Hand)</div>
+          <div id="cam-fx-display" style="font-family:'Cinzel',serif;font-size:.65rem;color:var(--tmid);min-height:2rem;line-height:1.8">None active</div>
+        </div></div>
+      </aside>
+    </div>
+  </section>
+
+
+  <!-- ─── DASHBOARD ─── -->
+  <section id="menu-dashboard" class="menu-section">
+    <div class="dashboard-grid">
+      <div class="panel dash-card">
+        <div class="p-inner">
+          <div class="section-hd">Your Profile</div>
+          <div class="big-level-ring" id="dash-level">1</div>
+          <div class="slbl tc">Level</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+            <div><div class="slbl">Total Score</div><div class="dash-stat acg" id="dash-score">0</div></div>
+            <div><div class="slbl">XP</div><div class="dash-stat acg" id="dash-xp">0</div></div>
+            <div><div class="slbl">Monsters</div><div class="dash-stat" id="dash-monsters">0</div></div>
+            <div><div class="slbl">Username</div><div class="dash-stat" id="dash-username">—</div></div>
+          </div>
+          <div class="slbl" style="margin-top:.8rem">XP Progress</div>
+          <div class="bar-o"><div class="bar-f bar-gold" id="dash-xp-bar" style="width:0%"></div></div>
+          <button class="btn btn-gold" style="margin-top:.8rem;width:100%" onclick="App.syncProgress()">↑ Sync to Server</button>
+        </div>
+      </div>
+      <div class="panel dash-card">
+        <div class="p-inner">
+          <div class="section-hd">Beat Visualizer</div>
+          <div class="beat-chart" id="beat-chart"></div>
+          <div class="section-hd" style="margin-top:1rem">Recent Activity</div>
+          <div id="activity-log" class="activity-log"></div>
+        </div>
+      </div>
+      <div class="panel dash-card">
+        <div class="p-inner">
+          <div class="section-hd">🏆 Leaderboard</div>
+          <div id="leaderboard-list"></div>
+          <button class="btn btn-gold btn-sm" style="margin-top:.6rem" onclick="App.loadLeaderboard()">↺ Refresh</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /#app -->
+
+<!-- VICTORY OVERLAY -->
+<div id="victory-overlay" class="hidden">
+  <div class="victory-box">
+    <div class="victory-title">✦ Victory! ✦</div>
+    <div class="victory-sub" id="victory-sub">The Wraith dissolves…</div>
+    <button class="big-btn" onclick="Game.nextMonster()">Face Next Foe ◆</button>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous" defer></script>
+<script src="js/audio.js"></script>
+<script src="js/vision.js"></script>
+<script src="js/game.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
+

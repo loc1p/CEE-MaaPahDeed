@@ -1,0 +1,744 @@
+/* ════════════════════════════════════════════════════
+   DESIGN TOKENS
+════════════════════════════════════════════════════ */
+:root {
+  --gold: #d4af37;
+  --gold-dim: #8a6e1a;
+  --gold-bright: #f0cc55;
+  --crimson: #c0392b;
+  --neon-green: #39ff14;
+  --neon-blue: #00cfff;
+  --neon-purple: #bc13fe;
+  --neon-amber: #ffbf00;
+  --neon-red: #ff4444;
+  --neon-pink: #e94560;
+  --deep: #04030a;
+  --surface: rgba(8, 5, 20, 0.94);
+  --border-gold: rgba(212, 175, 55, 0.3);
+  --border-dim: rgba(212, 175, 55, 0.1);
+  --text: #c0b8d0;
+  --tmid: #4a3a60;
+}
+
+/* ════════════════════════════════════════════════════
+   RESET & BASE
+════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { 
+  font-size: 16px; 
+  height: 100%;
+}
+
+body {
+  background: var(--deep);
+  color: var(--text);
+  font-family: 'Special Elite', cursive;
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5; /* แก้ตัวอักษรลอยด้วยการคุม line-height */
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ════════════════════════════════════════════════════
+   PARTICLE & OVERLAY
+════════════════════════════════════════════════════ */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .15;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: .035;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ════════════════════════════════════════════════════
+   LOGIN & AUTH OVERLAY (กึ่งกลางเป๊ะ)
+════════════════════════════════════════════════════ */
+#auth-overlay, #login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: radial-gradient(ellipse at 50% 40%, #0d0820 0%, #000 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-box, .login-box {
+  width: 420px;
+  max-width: 90vw;
+  border: 1px solid var(--border-gold);
+  background: rgba(10, 7, 25, .95);
+  padding: 3rem 2.5rem;
+  position: relative;
+  text-align: center;
+}
+
+/* มุมกล่อง */
+.lc {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: var(--gold);
+  border-style: solid;
+}
+.lc-tl { top: 8px; left: 8px; border-width: 1px 0 0 1px; }
+.lc-tr { top: 8px; right: 8px; border-width: 1px 1px 0 0; }
+.lc-bl { bottom: 8px; left: 8px; border-width: 0 0 1px 1px; }
+.lc-br { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; }
+
+.auth-title, .login-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 2.5rem;
+  color: var(--gold);
+  text-shadow: 0 0 25px rgba(212,175,55,.8);
+  animation: goldPulse 3s ease-in-out infinite;
+  margin-bottom: 0.5rem;
+}
+
+@keyframes goldPulse {
+  0%, 100% { text-shadow: 0 0 25px rgba(212,175,55,.8); }
+  50% { text-shadow: 0 0 45px rgba(212,175,55,1); }
+}
+
+.auth-subtitle, .login-sub {
+  font-family: 'Cinzel', serif;
+  font-size: .65rem;
+  letter-spacing: .4em;
+  color: var(--tmid);
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+}
+
+/* ════════════════════════════════════════════════════
+   NAV BAR (Alignment Fix)
+════════════════════════════════════════════════════ */
+#nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 500;
+  background: rgba(4, 3, 10, .97);
+  border-bottom: 1px solid var(--border-gold);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center; /* กึ่งกลางแนวตั้ง */
+  padding: 0 1.5rem;
+  height: 65px;
+  gap: 0.5rem;
+}
+
+.nav-logo {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1rem;
+  color: var(--gold-dim);
+  margin-right: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.nav-btn {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  color: var(--tmid);
+  background: transparent;
+  border: none;
+  padding: 0 1rem;
+  height: 100%;
+  cursor: pointer;
+  transition: all .25s;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.nav-btn:hover { color: var(--gold-dim); }
+
+.nav-btn.active {
+  color: var(--gold);
+  background: rgba(212, 175, 55, 0.05);
+}
+
+.nav-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold);
+}
+
+.nav-spacer { flex: 1; }
+
+.nav-user {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  color: var(--gold-dim);
+  letter-spacing: 1px;
+}
+
+.nav-logout {
+  background: transparent;
+  border: 1px solid var(--neon-pink);
+  color: var(--neon-pink);
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  padding: 4px 10px;
+  margin-left: 1rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.nav-logout:hover {
+  background: var(--neon-pink);
+  color: #000;
+}
+
+/* ════════════════════════════════════════════════════
+   APP WRAPPER & PANELS
+════════════════════════════════════════════════════ */
+#app {
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.menu-section {
+  display: none;
+}
+
+.menu-section.active {
+  display: block;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panel {
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-gold);
+}
+
+.p-inner {
+  padding: 1.5rem;
+  height: 100%;
+}
+
+/* ════════════════════════════════════════════════════
+   BATTLE MODE (จัดกึ่งกลางตัวโน้ต)
+════════════════════════════════════════════════════ */
+.battle-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr 260px;
+  gap: 1.5rem;
+}
+
+.battle-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+}
+
+.target-display {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 6rem;
+  color: var(--gold);
+  line-height: 1; /* ป้องกันตัวอักษรลอยเกินหน้ากาก */
+  text-align: center;
+  text-shadow: 0 0 30px var(--gold);
+  margin: 1.5rem 0;
+  display: block;
+}
+
+.det-display {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 4rem;
+  min-width: 100px;
+  text-align: center;
+}
+
+/* ════════════════════════════════════════════════════
+   INSTRUMENTS & FRETBOARD (Center cells)
+════════════════════════════════════════════════════ */
+.fretboard-wrap {
+  background: #0a0712;
+  border: 1px solid var(--border-gold);
+  padding: 1rem;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+
+.string {
+  display: flex;
+  height: 38px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.fret-cell {
+  flex: 1;
+  min-width: 60px;
+  border-right: 1px solid #2a2040;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: 'Cutive Mono', monospace;
+  font-size: 0.9rem;
+  transition: 0.2s;
+}
+
+.fret-cell:hover {
+  background: rgba(212, 175, 55, 0.1);
+  color: var(--gold);
+}
+
+/* ════════════════════════════════════════════════════
+   UI ELEMENTS (Inputs & Buttons)
+════════════════════════════════════════════════════ */
+.auth-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-gold);
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  text-align: center;
+  padding: 0.8rem;
+  outline: none;
+  letter-spacing: 0.2em;
+  margin-bottom: 1.5rem;
+}
+
+.btn, .big-btn, .auth-btn {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 0.8rem 2rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+}
+
+.btn-gold, .auth-btn {
+  background: var(--gold);
+  color: #000;
+  border: none;
+  box-shadow: 0 0 15px rgba(212,175,55,.4);
+}
+
+.btn-gold:hover {
+  background: var(--gold-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(212,175,55,.6);
+}
+
+/* Labels */
+.slbl {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--tmid);
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+  display: block;
+}
+
+.sval {
+  font-family: 'IM Fell English', serif;
+  font-size: 1.2rem;
+  color: #c8b88a;
+  margin-bottom: 1rem;
+}
+
+.acg { color: var(--neon-green); text-shadow: 0 0 8px rgba(57,255,20,.6); }
+.hidden { display: none !important; }
+.hr { border: none; border-top: 1px solid var(--border-dim); margin: 1.2rem 0; }
+
+/* Visualizer */
+.viz-wrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 80px;
+  margin: 1.5rem 0;
+}
+
+.vbar {
+  width: 8px;
+  background: var(--gold-dim);
+  min-height: 4px;
+  transition: height 0.1s ease;
+}
+
+/* ════════════════════════════════════════════════════
+   RHYTHM QUEST
+════════════════════════════════════════════════════ */
+.rg-screen {
+  background: #000;
+  border: 2px solid rgba(233, 69, 96, 0.3);
+  height: 300px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.rg-target-line {
+  position: absolute;
+  bottom: 60px;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--gold);
+}
+
+.rg-score-disp {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 2.5rem;
+  color: var(--gold);
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* ── GUITAR FRETBOARD (GARAGEBAND STYLE) ── */
+.fretboard-wrap {
+  background: #0a0712;
+  border: 1px solid var(--border-gold);
+  border-radius: 2px;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.string-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 3px;
+  position: relative;
+}
+
+.string-label {
+  font-family: 'Cutive Mono', monospace;
+  font-size: .75rem;
+  color: #5a4a70;
+  width: 25px;
+  flex-shrink: 0;
+  text-align: right;
+  padding-right: 8px;
+}
+
+.fret-cell {
+  flex: 1;
+  height: 34px;
+  background: linear-gradient(180deg, #1a1228 0%, #120e20 100%);
+  border-right: 1px solid #2a2040;
+  border-bottom: 1px solid rgba(212,175,55,.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: 'Cutive Mono', monospace;
+  font-size: .8rem;
+  color: #3a2855;
+  position: relative;
+}
+
+.fret-cell:hover {
+  background: rgba(212, 175, 55, .08);
+  color: var(--gold);
+}
+
+/* เอฟเฟกต์เมื่ออยู่ใน Scale หรือถูกกด */
+.fret-cell.fret-played {
+  background: rgba(57, 255, 20, 0.15) !important;
+  color: var(--neon-green) !important;
+  text-shadow: 0 0 10px var(--neon-green);
+  box-shadow: inset 0 0 12px rgba(57, 255, 20, 0.2);
+}
+
+.fret-cell.fret-root {
+  background: rgba(212, 175, 55, 0.15) !important;
+  color: var(--gold) !important;
+  text-shadow: 0 0 10px var(--gold);
+}
+
+/* เส้นสายกีตาร์ (ความหนาไล่ระดับ) */
+.string-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.s1 .string-line { background: rgba(180,180,220,.6); height: 1px; }
+.s2 .string-line { background: rgba(180,180,220,.65); height: 1px; }
+.s3 .string-line { background: rgba(180,180,220,.7); height: 1.5px; }
+.s4 .string-line { background: rgba(180,180,200,.75); height: 2px; }
+.s5 .string-line { background: rgba(170,170,190,.8); height: 2px; }
+.s6 .string-line { background: rgba(160,160,180,.85); height: 2.5px; }
+
+.fret-cell span { position: relative; z-index: 2; }
+/* ══════════════ BATTLE FEEDBACK ══════════════ */
+.fret-cell.correct {
+  background: rgba(57,255,20,0.25);
+  box-shadow: 0 0 12px var(--neon-green);
+  color: var(--neon-green);
+}
+
+.fret-cell.wrong {
+  background: rgba(255,50,50,0.25);
+  box-shadow: 0 0 10px red;
+  color: red;
+}
+
+.target-display.small {
+  font-size: 3rem;
+  opacity: 0.8;
+}
+
+/* score */
+.battle-score {
+  text-align: center;
+  margin-top: 1rem;
+  font-family: 'Cinzel';
+  color: var(--gold);
+}
+/* ════════════════════ RHYTHM QUEST (GAME) ════════════════════ */
+.rg-screen {
+  background: #000;
+  border: 2px solid rgba(233, 69, 96, 0.3);
+  height: 400px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  display: flex;
+}
+
+.rg-lane {
+  flex: 1;
+  height: 100%;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.rg-note {
+  position: absolute;
+  width: 90%;
+  left: 5%;
+  height: 20px;
+  background: var(--gold);
+  box-shadow: 0 0 15px var(--gold);
+  border-radius: 4px;
+  top: -20px;
+}
+
+.rg-target-line {
+  position: absolute;
+  bottom: 60px;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--gold);
+  z-index: 5;
+}
+
+.rg-score-disp {
+  font-family: 'Cinzel Decorative';
+  font-size: 2.5rem;
+  color: var(--gold);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.rg-key-hint {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+  padding: 10px 0;
+  background: rgba(0,0,0,0.5);
+  font-family: 'Cutive Mono';
+  color: var(--gold-dim);
+}
+
+/* แสงวูบวาบเวลาถูกโน้ต */
+.rg-hit-fx {
+  position: absolute;
+  bottom: 60px;
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(to top, var(--neon-green), transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+/* ════════════════════ RHYTHM QUEST (GAME) ════════════════════ */
+.rg-screen {
+  background: #000;
+  border: 2px solid rgba(233, 69, 96, 0.3);
+  height: 400px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  display: flex;
+}
+
+.rg-lane {
+  flex: 1;
+  height: 100%;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.rg-note {
+  position: absolute;
+  width: 90%;
+  left: 5%;
+  height: 20px;
+  background: var(--gold);
+  box-shadow: 0 0 15px var(--gold);
+  border-radius: 4px;
+  top: -20px;
+}
+
+.rg-target-line {
+  position: absolute;
+  bottom: 60px;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--gold);
+  z-index: 5;
+}
+
+.rg-score-disp {
+  font-family: 'Cinzel Decorative';
+  font-size: 2.5rem;
+  color: var(--gold);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.rg-key-hint {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+  padding: 10px 0;
+  background: rgba(0,0,0,0.5);
+  font-family: 'Cutive Mono';
+  color: var(--gold-dim);
+}
+
+/* แสงวูบวาบเวลาถูกโน้ต */
+.rg-hit-fx {
+  position: absolute;
+  bottom: 60px;
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(to top, var(--neon-green), transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+/* ════════ BATTLE GRID LAYOUT ════════ */
+.battle-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr 260px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Panel & Inner */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border-gold);
+  position: relative;
+}
+.p-inner { padding: 1.5rem; }
+
+/* Typography (slbl = Label, sval = Value) */
+.slbl {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: #4a3a60; /* สีม่วงเข้มแบบคลาสสิก */
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+.sval {
+  font-family: 'IM Fell English', serif;
+  font-size: 1.1rem;
+  color: #c8b88a;
+  margin-bottom: 1rem;
+}
+.acg { color: var(--neon-green); text-shadow: 0 0 8px rgba(57,255,20,0.5); }
+
+/* Progress Bars (bar-o = Outer, bar-f = Fill) */
+.bar-o {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(212,175,55,0.2);
+  height: 8px;
+  overflow: hidden;
+  margin: 0.4rem 0;
+}
+.bar-f { height: 100%; transition: width 0.5s ease; }
+.bar-gold { background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+.bar-red { background: linear-gradient(90deg, #7a0000, var(--crimson)); }
+
+/* Battle Center Elements */
+.battle-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+  text-align: center;
+}
+.battle-quote {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  color: #5a4a70;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+/* Target Note */
+.target-display {
+  font-family: 'Cinzel Decorative';
+  font-size: 5.5rem;
+  color: var(--gold);
+  text-shadow: 0 0 25px var(--gold);
+  line-height: 1;
+  margin: 1rem 0;
+}
+
+/* Utility */
+.hr { border-top: 1px solid var(--border-gold); opacity: 0.2; margin: 1.2rem 0; }
+.tc { text-align: center; }
+.mt-sm { margin-top: 0.8rem; }
