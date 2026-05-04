@@ -145,6 +145,32 @@
         </div>
       </aside>
     </div>
+
+    <section class="panel song-dashboard-panel">
+      <div class="p-inner">
+        <div class="song-dashboard-head">
+          <div>
+            <div class="section-hd">Song Library Dashboard</div>
+            <div class="song-dashboard-copy">Recent plays, saved favorites, and the top searched songs from real API data.</div>
+          </div>
+          <button class="btn btn-gold btn-sm hidden" id="song-save-btn" onclick="App.saveCurrentSong()">Save Current Song</button>
+        </div>
+        <div class="song-dashboard-grid">
+          <div>
+            <div class="section-hd">Recent Songs</div>
+            <div id="song-recent-list" class="song-mini-list"></div>
+          </div>
+          <div>
+            <div class="section-hd">Saved Songs</div>
+            <div id="song-saved-list" class="song-mini-list"></div>
+          </div>
+          <div>
+            <div class="section-hd">Top Searches</div>
+            <div id="song-chart" class="song-chart"></div>
+          </div>
+        </div>
+      </div>
+    </section>
   </section>
 
 
@@ -180,6 +206,14 @@
           <div class="section-hd">Camera Guitar — Gesture Studio</div>
           <h1 class="cc-title">Air Guitar Studio Master</h1>
           <p class="cc-copy">Left side selects chords · Right side strums · Open fingers to play · Close fingers on the return stroke for silence</p>
+          <div class="cc-action-tips" aria-label="Feature tips">
+            <span class="cc-tip-label">Hover for tips:</span>
+            <span class="cc-tip-word" tabindex="0" data-tip="Normal mode: open your mouth to play only the drum sound. No special visual effects.">Normal</span>
+            <span class="cc-tip-word" tabindex="0" data-tip="Maphadeed mode: unlock the special mouth, blink, and smile effects.">Maphadeed</span>
+            <span class="cc-tip-word" tabindex="0" data-tip="Open your mouth: Normal plays drums only. Maphadeed drops dancing dog.png copies with the drum beat.">Mouth</span>
+            <span class="cc-tip-word" tabindex="0" data-tip="Try blinking in Maphadeed mode. Something flashy might dance across the camera.">Blink</span>
+            <span class="cc-tip-word" tabindex="0" data-tip="Try smiling if you wanna know.">Smile</span>
+          </div>
         </div>
         <div class="cc-controls">
           <div class="cc-mode-switch" aria-label="Camera mode">

@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const fetch = require('node-fetch');
 const User = require('./models/User');
+const SongSearch = require('./models/SongSearch');
 
 dotenv.config();
 
@@ -45,7 +46,9 @@ const LOCAL_CHORDS = [
 ];
 
 const FALLBACK_SONG_CHORDS = {
-  'tyler-the-creator/are-we-still-friends': ['Fmaj7', 'Em7', 'Am7', 'Dm7', 'G7']
+  'tyler-the-creator/are-we-still-friends': ['Fmaj7', 'Em7', 'Am7', 'Dm7', 'G7'],
+  'maroon-5/this-love': ['Cm', 'Fm', 'Bb', 'Eb', 'G7', 'Ab'],
+  'maroon-five/this-love': ['Cm', 'Fm', 'Bb', 'Eb', 'G7', 'Ab']
 };
 
 function auth(req, res, next) {
@@ -58,6 +61,16 @@ function auth(req, res, next) {
   } catch {
     res.status(401).json({ error: 'Invalid token' });
   }
+}
+
+function optionalAuth(req, res, next) {
+  const token = (req.headers.authorization || '').split(' ')[1];
+  if (!token) return next();
+
+  try {
+    req.user = jwt.verify(token, SECRET);
+  } catch {}
+  next();
 }
 
 function notePc(note) {
@@ -90,6 +103,95 @@ function slugifySongPart(value) {
     .replace(/&/g, 'and')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
+}
+
+function songKeyFor(artist, song) {
+  return `${slugifySongPart(artist)}/${slugifySongPart(song)}`;
+}
+
+async function fetchSongCover(artist, song) {
+  const term = encodeURIComponent(`${artist} ${song}`);
+  try {
+    const response = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1`, {
+      headers: { 'User-Agent': 'MaaPahDeed/1.0' }
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const artwork = data.results && data.results[0] && data.results[0].artworkUrl100;
+    return artwork ? artwork.replace('100x100bb', '300x300bb') : null;
+  } catch {
+    return null;
+  }
+}
+
+async function enrichSongResult(result, artistOverride = null, songOverride = null) {
+  const artist = String(artistOverride || result.artist || '').trim();
+  const song = String(songOverride || result.song || '').trim();
+  const coverUrl = result.coverUrl || await fetchSongCover(artist, song);
+  return { ...result, artist, song, coverUrl };
+}
+
+function songItemFromResult(result) {
+  const artist = String(result.artist || '').trim();
+  const song = String(result.song || '').trim();
+  return {
+    songKey: songKeyFor(artist, song),
+    artist,
+    song,
+    key: result.key || null,
+    source: result.source || null,
+    coverUrl: result.coverUrl || null,
+    chordsCount: Array.isArray(result.chords) ? result.chords.length : 0,
+    chords: Array.isArray(result.chords) ? result.chords : [],
+    updatedAt: new Date(),
+    playedAt: new Date()
+  };
+}
+
+function publicSongItem(item) {
+  return {
+    songKey: item.songKey,
+    artist: item.artist,
+    song: item.song,
+    key: item.key || null,
+    source: item.source || null,
+    coverUrl: item.coverUrl || null,
+    chordsCount: item.chordsCount || 0,
+    chords: item.chords || [],
+    note: item.note || '',
+    savedAt: item.savedAt,
+    updatedAt: item.updatedAt,
+    playedAt: item.playedAt
+  };
+}
+
+async function recordSongSearch(result, userId = null) {
+  try {
+    const item = songItemFromResult(result);
+    if (!item.songKey || item.songKey === '/') return;
+
+    await SongSearch.findOneAndUpdate(
+      { songKey: item.songKey },
+      {
+        $setOnInsert: { artist: item.artist, song: item.song },
+        $set: { coverUrl: item.coverUrl, lastSearchedAt: new Date() },
+        $inc: { count: 1 }
+      },
+      { upsert: true }
+    );
+
+    if (!userId) return;
+    const user = await User.findById(userId);
+    if (!user) return;
+    user.recentSongs = [
+      item,
+      ...(user.recentSongs || []).filter(song => song.songKey !== item.songKey)
+    ].slice(0, 3);
+    user.updatedAt = new Date();
+    await user.save();
+  } catch (error) {
+    console.warn('Song history skipped:', error.message);
+  }
 }
 
 function normalizeChordSymbol(symbol) {
@@ -197,7 +299,8 @@ async function fetchEChordsSong(artist, song) {
 
 function fallbackSongChords(artist, song, externalApiError = null) {
   const key = `${slugifySongPart(artist)}/${slugifySongPart(song)}`;
-  const symbols = FALLBACK_SONG_CHORDS[key];
+  const blocked = /blocked|403|forbidden/i.test(String(externalApiError || ''));
+  const symbols = FALLBACK_SONG_CHORDS[key] || (blocked ? ['C', 'G', 'Am', 'F'] : null);
   if (!symbols) return null;
 
   return {
@@ -476,23 +579,99 @@ app.get('/api/music/search', auth, async (req, res) => {
   }
 });
 
-app.get('/api/music/chords', async (req, res) => {
+app.get('/api/music/chords', optionalAuth, async (req, res) => {
   const artist = String(req.query.artist || '').trim();
   const song = String(req.query.song || '').trim();
 
   try {
     if (!artist || !song) return res.status(400).json({ error: 'Artist and song are required' });
 
-    const result = await fetchEChordsSong(artist, song);
+    const result = await enrichSongResult(await fetchEChordsSong(artist, song), artist, song);
+    await recordSongSearch(result, req.user && req.user.id);
     res.json(result);
   } catch (error) {
     const fallback = fallbackSongChords(artist, song, error.message);
     if (fallback && fallback.chords.length) {
-      res.json(fallback);
+      const result = await enrichSongResult(fallback, artist, song);
+      await recordSongSearch(result, req.user && req.user.id);
+      res.json(result);
       return;
     }
 
     res.status(error.status || 500).json({ error: error.message || 'Song chord lookup failed' });
+  }
+});
+
+app.get('/api/music/library', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('savedSongs recentSongs');
+    res.json({
+      savedSongs: (user.savedSongs || []).map(publicSongItem),
+      recentSongs: (user.recentSongs || []).slice(0, 3).map(publicSongItem)
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/music/library', auth, async (req, res) => {
+  try {
+    const item = songItemFromResult(req.body);
+    if (!item.artist || !item.song || !item.songKey || item.songKey === '/') {
+      return res.status(400).json({ error: 'Artist and song are required' });
+    }
+
+    const user = await User.findById(req.user.id);
+    const existing = (user.savedSongs || []).find(song => song.songKey === item.songKey);
+    if (existing) {
+      Object.assign(existing, { ...item, note: existing.note || '', savedAt: existing.savedAt || new Date() });
+    } else {
+      user.savedSongs.unshift({ ...item, savedAt: new Date(), note: '' });
+    }
+    user.updatedAt = new Date();
+    await user.save();
+    res.status(existing ? 200 : 201).json({ savedSongs: user.savedSongs.map(publicSongItem) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.patch('/api/music/library/:songKey', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    const song = (user.savedSongs || []).find(item => item.songKey === req.params.songKey);
+    if (!song) return res.status(404).json({ error: 'Saved song not found' });
+
+    if (req.body.note !== undefined) song.note = String(req.body.note).slice(0, 240);
+    if (req.body.artist !== undefined) song.artist = String(req.body.artist).trim() || song.artist;
+    if (req.body.song !== undefined) song.song = String(req.body.song).trim() || song.song;
+    song.updatedAt = new Date();
+    user.updatedAt = new Date();
+    await user.save();
+    res.json({ savedSongs: user.savedSongs.map(publicSongItem) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/music/library/:songKey', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    user.savedSongs = (user.savedSongs || []).filter(item => item.songKey !== req.params.songKey);
+    user.updatedAt = new Date();
+    await user.save();
+    res.json({ savedSongs: user.savedSongs.map(publicSongItem) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/music/charts/top-searches', auth, async (req, res) => {
+  try {
+    const songs = await SongSearch.find({}).sort({ count: -1, lastSearchedAt: -1 }).limit(3);
+    res.json({ songs });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
