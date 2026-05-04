@@ -151,7 +151,7 @@ const App = {
       this.loadMusicDashboard();
     } catch (err) {
       console.error('Song chord search error:', err);
-      results.innerHTML = `<div class="chord-analysis-title">Song lookup failed</div><div class="chord-analysis-meta">${this.escapeHtml(err.message)}</div>`;
+      results.innerHTML = `<div class="chord-analysis-title">"${song}"</div><div class="chord-analysis-meta"></div><div class="chord-analysis-title">song lookup failed</div><div class="chord-analysis-meta">${this.escapeHtml(err.message)}</div>`;
     }
   },
 
