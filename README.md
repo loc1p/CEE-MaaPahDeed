@@ -152,6 +152,25 @@ http://localhost:5001
 
 The backend serves the frontend from the `frontend/` folder. Camera and microphone features work best on `localhost` or HTTPS.
 
+## Public Deployment
+
+This repo includes `render.yaml` for deploying one public Render web service. The Express backend serves both the API and the static frontend, so the final public URL will look like:
+
+```text
+https://<your-render-service>.onrender.com
+```
+
+Deployment steps:
+
+1. Push this repository to GitHub.
+2. Create a MongoDB Atlas database and copy its connection string.
+3. In Render, create a new Blueprint from this repo. Render reads `render.yaml`.
+4. Add required environment variables in Render:
+   - `MONGO_URI`
+   - optional `OPENAI_API_KEY`
+   - optional `GEMINI_API_KEY`
+5. Deploy, then open `/api/health` on the public URL to verify the backend.
+
 ## Useful API Routes
 
 ### Auth

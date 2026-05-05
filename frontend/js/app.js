@@ -1,5 +1,5 @@
 const App = {
-  baseUrl: 'http://localhost:5001/api',
+  baseUrl: location.protocol === 'file:' ? 'http://localhost:5001/api' : `${location.origin}/api`,
   user: null,
   token: localStorage.getItem('maapah_token'),
   cachedUser: JSON.parse(localStorage.getItem('maapah_user') || 'null'),
