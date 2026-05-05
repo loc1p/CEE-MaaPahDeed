@@ -99,7 +99,23 @@ cd backend
 npm install
 ```
 
-### 2. Create environment file
+### 2. Install AI chord classifier dependencies
+
+Battle mode uses the local `backend/ml/lv_chordia_classify.py` helper with the `lv-chordia` Python package. The setup script creates `backend/.venv-lvchordia` inside this project, so the server does not depend on another folder on your machine.
+
+On Windows PowerShell:
+
+```powershell
+npm run setup:ai
+```
+
+If the machine has an NVIDIA GPU and CUDA-compatible PyTorch can be installed, the classifier will use GPU automatically. Otherwise it falls back to CPU. You can force CPU setup with:
+
+```powershell
+.\setup-lv-chordia.ps1 -CpuOnly
+```
+
+### 3. Create environment file
 
 On Windows PowerShell:
 
@@ -112,17 +128,24 @@ Then edit `backend/.env` and set:
 - `MONGO_URI`
 - `JWT_SECRET`
 
-### 3. Start MongoDB
+The AI defaults work without custom paths. Optional overrides are available in `.env`:
+
+- `LV_CHORDIA_PYTHON`
+- `LV_CHORDIA_CWD`
+- `LV_CHORDIA_TIMEOUT_MS`
+- `LV_CHORDIA_CHORD_DICT`
+
+### 4. Start MongoDB
 
 Use either:
 
 - local MongoDB at `mongodb://127.0.0.1:27017/maapah`
 - MongoDB Atlas connection string in `MONGO_URI`
 
-### 4. Run the backend
+### 5. Run the backend
 
 ```bash
-npm run dev
+npm start
 ```
 
 Backend default URL:
@@ -137,7 +160,7 @@ Health check:
 http://localhost:5001/api/health
 ```
 
-### 5. Open the frontend
+### 6. Open the frontend
 
 Recommended local URL:
 

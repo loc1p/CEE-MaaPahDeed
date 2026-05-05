@@ -365,19 +365,25 @@ async function fetchExternalChords() {
   return Array.isArray(data) ? data : data.data || data.chords || data.results || [];
 }
 
-const DEFAULT_LV_CHORDIA_PYTHON = 'C:\\Coding\\CEE Project\\chord lassifier\\.venv-lvchordia\\Scripts\\python.exe';
-const DEFAULT_LV_CHORDIA_CWD = 'C:\\Coding\\CEE Project\\chord lassifier';
+const PROJECT_ROOT = path.resolve(__dirname, '..');
+const LV_CHORDIA_VENV = path.join(__dirname, '.venv-lvchordia');
+const DEFAULT_LV_CHORDIA_PYTHON_CANDIDATES = [
+  path.join(LV_CHORDIA_VENV, 'Scripts', 'python.exe'),
+  path.join(LV_CHORDIA_VENV, 'bin', 'python'),
+  path.join(PROJECT_ROOT, '.venv-lvchordia', 'Scripts', 'python.exe'),
+  path.join(PROJECT_ROOT, '.venv-lvchordia', 'bin', 'python')
+];
 const LV_CHORDIA_SCRIPT = path.join(__dirname, 'ml', 'lv_chordia_classify.py');
 
 function lvChordiaPythonCommand() {
   if (process.env.LV_CHORDIA_PYTHON) return process.env.LV_CHORDIA_PYTHON;
-  if (fs.existsSync(DEFAULT_LV_CHORDIA_PYTHON)) return DEFAULT_LV_CHORDIA_PYTHON;
+  const localPython = DEFAULT_LV_CHORDIA_PYTHON_CANDIDATES.find(candidate => fs.existsSync(candidate));
+  if (localPython) return localPython;
   return process.env.PYTHON || 'python';
 }
 
 function lvChordiaWorkingDirectory() {
   if (process.env.LV_CHORDIA_CWD) return process.env.LV_CHORDIA_CWD;
-  if (fs.existsSync(DEFAULT_LV_CHORDIA_CWD)) return DEFAULT_LV_CHORDIA_CWD;
   return __dirname;
 }
 

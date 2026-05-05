@@ -1,0 +1,5 @@
+lv-chordia==1.0.0
+librosa>=0.11.0
+numpy>=1.19.2
+soundfile>=0.13.1
+torch>=2.0
