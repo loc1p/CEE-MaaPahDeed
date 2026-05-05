@@ -863,6 +863,46 @@ body.theme-light .guitar-guide-meta {
   text-transform: uppercase;
 }
 
+.song-quest {
+  display: grid;
+  gap: .65rem;
+}
+
+#menu-battle .song-quest .section-hd {
+  font-size: 1.08rem;
+  line-height: 1.25;
+}
+
+#menu-battle .song-quest .auth-input {
+  margin-bottom: 0;
+  padding: .95rem .75rem;
+  font-size: 1.16rem;
+  min-height: 50px;
+}
+
+#menu-battle .song-quest .btn {
+  width: 100%;
+  min-height: 48px;
+  padding: .85rem 1rem;
+  font-size: .78rem;
+}
+
+#menu-battle .song-quest .song-credit {
+  margin-top: 0;
+  font-size: .7rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+#menu-battle .song-quest .mb-results {
+  display: grid;
+  gap: .55rem;
+}
+
+#menu-battle .song-quest .song-link {
+  font-size: 1.08rem;
+}
+
 .song-dashboard-panel {
   margin-top: 1.2rem;
 }
@@ -1374,7 +1414,7 @@ body.theme-light .song-chart-label {
 /* ════════ BATTLE GRID LAYOUT ════════ */
 .battle-grid {
   display: grid;
-  grid-template-columns: 260px 1fr 260px;
+  grid-template-columns: 260px minmax(0, 1fr) 340px;
   gap: 1.5rem;
   align-items: start;
 }
