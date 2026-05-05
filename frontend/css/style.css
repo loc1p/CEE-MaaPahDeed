@@ -439,15 +439,25 @@ body.theme-light #login-overlay {
 
 .det-display {
   font-family: 'Cinzel Decorative', serif;
-  font-size: 3.4rem;
+  font-size: clamp(2rem, 5vw, 3.4rem);
   min-width: 100px;
+  max-width: 100%;
   text-align: center;
   color: #f4e7ba;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
 }
 
 .det-display.matched {
   color: var(--neon-green);
   text-shadow: 0 0 14px rgba(57,255,20,.75);
+}
+
+.det-display.muted {
+  color: rgba(244, 231, 186, .58);
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  text-shadow: none;
 }
 
 .target-hz {
@@ -810,6 +820,12 @@ body.theme-light .guitar-guide-meta {
   margin: .8rem auto 0;
   max-width: 420px;
   padding: .75rem;
+  text-align: left;
+}
+
+.chord-analysis.is-muted {
+  border-color: rgba(185, 171, 201, .22);
+  background: rgba(10, 7, 18, .46);
 }
 
 .chord-analysis-title {
@@ -817,6 +833,7 @@ body.theme-light .guitar-guide-meta {
   font-family: 'Cinzel', serif;
   font-size: .95rem;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .chord-analysis-title span {
@@ -1524,7 +1541,8 @@ body.theme-light .song-chart-label {
 
 #menu-battle .target-display,
 #menu-battle .det-display {
-  font-family: 'Cinzel Decorative', serif;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-variant-caps: normal;
   letter-spacing: 0;
 }
 
@@ -1533,6 +1551,12 @@ body.theme-light .song-chart-label {
 #menu-battle .chord-analysis-title {
   font-size: 1.08rem;
   color: #ead08a;
+}
+
+#menu-battle .chord-analysis-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-variant-caps: normal;
+  font-weight: 700;
 }
 
 #menu-battle .monster-lore,
@@ -1606,6 +1630,11 @@ body.theme-light #menu-battle .song-link {
 body.theme-light #menu-battle .det-display.matched,
 body.theme-light #menu-battle .acg {
   color: #247345;
+  text-shadow: none;
+}
+
+body.theme-light #menu-battle .det-display.muted {
+  color: #8a7f90;
   text-shadow: none;
 }
 

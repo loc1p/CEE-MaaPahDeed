@@ -5,6 +5,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const crypto = require('crypto');
+const { spawn } = require('child_process');
 const fetch = require('node-fetch');
 const User = require('./models/User');
 const SongSearch = require('./models/SongSearch');
@@ -16,7 +20,7 @@ const SECRET = process.env.JWT_SECRET || 'maapah-dev-secret';
 const PORT = process.env.PORT || 5001;
 
 app.use(cors({ origin: '*', credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '30mb' }));
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 mongoose
@@ -361,6 +365,140 @@ async function fetchExternalChords() {
   return Array.isArray(data) ? data : data.data || data.chords || data.results || [];
 }
 
+const DEFAULT_LV_CHORDIA_PYTHON = 'C:\\Coding\\CEE Project\\chord lassifier\\.venv-lvchordia\\Scripts\\python.exe';
+const DEFAULT_LV_CHORDIA_CWD = 'C:\\Coding\\CEE Project\\chord lassifier';
+const LV_CHORDIA_SCRIPT = path.join(__dirname, 'ml', 'lv_chordia_classify.py');
+
+function lvChordiaPythonCommand() {
+  if (process.env.LV_CHORDIA_PYTHON) return process.env.LV_CHORDIA_PYTHON;
+  if (fs.existsSync(DEFAULT_LV_CHORDIA_PYTHON)) return DEFAULT_LV_CHORDIA_PYTHON;
+  return process.env.PYTHON || 'python';
+}
+
+function lvChordiaWorkingDirectory() {
+  if (process.env.LV_CHORDIA_CWD) return process.env.LV_CHORDIA_CWD;
+  if (fs.existsSync(DEFAULT_LV_CHORDIA_CWD)) return DEFAULT_LV_CHORDIA_CWD;
+  return __dirname;
+}
+
+function runProcess(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: __dirname,
+      windowsHide: true,
+      ...options
+    });
+    let stdout = '';
+    let stderr = '';
+    let finished = false;
+    const timeout = setTimeout(() => {
+      if (finished) return;
+      finished = true;
+      child.kill();
+      reject(new Error('lv-chordia timed out while classifying audio'));
+    }, Number(process.env.LV_CHORDIA_TIMEOUT_MS || 90000));
+
+    child.stdout.on('data', chunk => {
+      stdout += chunk.toString();
+    });
+    child.stderr.on('data', chunk => {
+      stderr += chunk.toString();
+    });
+    child.on('error', error => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.on('close', code => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      if (code !== 0) {
+        reject(new Error((stderr || stdout || `lv-chordia exited with code ${code}`).trim()));
+        return;
+      }
+      resolve({ stdout, stderr });
+    });
+  });
+}
+
+function audioExtensionFromMime(mimeType) {
+  if (/wav/i.test(String(mimeType))) return '.wav';
+  if (/mpeg|mp3/i.test(String(mimeType))) return '.mp3';
+  if (/ogg/i.test(String(mimeType))) return '.ogg';
+  if (/webm/i.test(String(mimeType))) return '.webm';
+  return '.wav';
+}
+
+function normalizeLvChordSymbol(symbol) {
+  const raw = String(symbol || 'N').trim();
+  if (!raw || raw === 'N') return 'N';
+
+  return raw
+    .replace(/:maj7/i, 'maj7')
+    .replace(/:min7/i, 'm7')
+    .replace(/:maj/i, '')
+    .replace(/:min/i, 'm')
+    .replace(/:dim/i, 'dim')
+    .replace(/:aug/i, 'aug')
+    .replace(/:sus4/i, 'sus4')
+    .replace(/:sus2/i, 'sus2')
+    .replace(/:7/i, '7');
+}
+
+function confidenceFromLvSegments(chord, segments) {
+  const total = (segments || []).reduce((sum, item) => {
+    return sum + Math.max(0, Number(item.end_time) - Number(item.start_time));
+  }, 0);
+  if (!total) return chord === 'N' ? 0 : 75;
+
+  const chordDuration = (segments || []).reduce((sum, item) => {
+    return item.chord === chord
+      ? sum + Math.max(0, Number(item.end_time) - Number(item.start_time))
+      : sum;
+  }, 0);
+  return Math.max(1, Math.min(100, Math.round(chordDuration / total * 100)));
+}
+
+async function writeRequestAudioFile(body) {
+  const audioBase64 = body.audioWavBase64 || body.audioBase64;
+  if (!audioBase64) throw new Error('No audio data received');
+
+  const tempDir = path.join(os.tmpdir(), `maapah-lvchordia-${crypto.randomUUID()}`);
+  await fs.promises.mkdir(tempDir, { recursive: true });
+
+  const mimeType = body.audioWavBase64 ? 'audio/wav' : body.mimeType;
+  const audioPath = path.join(tempDir, `capture${audioExtensionFromMime(mimeType)}`);
+  const buffer = Buffer.from(String(audioBase64), 'base64');
+  if (!buffer.length) throw new Error('Audio data was empty');
+  await fs.promises.writeFile(audioPath, buffer);
+  return { tempDir, audioPath };
+}
+
+async function classifyWithLvChordia(body) {
+  const { tempDir, audioPath } = await writeRequestAudioFile(body);
+  try {
+    const { stdout, stderr } = await runProcess(lvChordiaPythonCommand(), [
+      LV_CHORDIA_SCRIPT,
+      audioPath,
+      '--chord-dict',
+      process.env.LV_CHORDIA_CHORD_DICT || 'submission'
+    ], { cwd: lvChordiaWorkingDirectory() });
+    const jsonLine = stdout.trim().split(/\r?\n/).filter(Boolean).pop();
+    if (!jsonLine) throw new Error((stderr || 'lv-chordia returned no output').trim());
+
+    const result = JSON.parse(jsonLine);
+    return {
+      ...result,
+      rawChord: result.chord || 'N',
+      chord: normalizeLvChordSymbol(result.chord)
+    };
+  } finally {
+    await fs.promises.rm(tempDir, { recursive: true, force: true });
+  }
+}
+
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -571,18 +709,52 @@ app.post('/api/chords/analyze-audio', async (req, res) => {
   const { noteHints = [] } = req.body;
   const inputNotes = uniqueNotes(noteHints);
   const hintMatches = inputNotes.length >= 2 ? scoreChords(inputNotes, LOCAL_CHORDS) : [];
+  let lvChordiaError = null;
+
+  if (req.body.audioWavBase64 || req.body.audioBase64) {
+    try {
+      const lvResult = await classifyWithLvChordia(req.body);
+      const rawChord = lvResult.rawChord || lvResult.chord || 'N';
+      const chordName = lvResult.chord || 'N';
+      const confidence = confidenceFromLvSegments(rawChord, lvResult.segments);
+
+      return res.json({
+        source: 'lv-chordia',
+        inputNotes,
+        matches: hintMatches,
+        segments: lvResult.segments || [],
+        device: lvResult.device,
+        elapsedSeconds: lvResult.elapsedSeconds,
+        chord: {
+          chord: chordName === 'N' ? 'No chord' : chordName,
+          rawChord,
+          confidence,
+          notes: chordName === 'N' ? [] : chordSymbolToNotes(chordName),
+          feedback: chordName === 'N'
+            ? 'lv-chordia did not find a stable chord in this recording.'
+            : `lv-chordia detected ${chordName}.`,
+          practiceTip: 'Strum once clearly and let the chord ring through the recording window.'
+        }
+      });
+    } catch (error) {
+      lvChordiaError = error.message;
+      console.warn('lv-chordia analysis failed:', error.message);
+    }
+  }
 
   if (inputNotes.length < 2) {
     return res.status(400).json({
-      error: 'Play 2-4 clear notes first',
+      error: lvChordiaError || 'Play 2-4 clear notes first',
       inputNotes,
-      matches: hintMatches
+      matches: hintMatches,
+      lvChordiaError
     });
   }
 
   const bestMatch = hintMatches[0] || null;
   res.json({
-    source: 'Local chord analysis',
+    source: lvChordiaError ? 'Local chord analysis after lv-chordia error' : 'Local chord analysis',
+    lvChordiaError,
     inputNotes,
     matches: hintMatches,
     chord: bestMatch ? {
