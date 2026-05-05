@@ -361,134 +361,6 @@ async function fetchExternalChords() {
   return Array.isArray(data) ? data : data.data || data.chords || data.results || [];
 }
 
-function responseText(data) {
-  if (data.output_text) return data.output_text;
-
-  return (data.output || [])
-    .flatMap(item => item.content || [])
-    .filter(content => content.type === 'output_text' && content.text)
-    .map(content => content.text)
-    .join('\n');
-}
-
-function geminiText(data) {
-  return (data.candidates || [])
-    .flatMap(candidate => candidate.content && candidate.content.parts || [])
-    .filter(part => part.text)
-    .map(part => part.text)
-    .join('\n');
-}
-
-function parseAiJson(text) {
-  const jsonText = String(text || '')
-    .trim()
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/```$/i, '')
-    .trim();
-
-  return JSON.parse(jsonText);
-}
-
-function chordPrompt(inputNotes, matches) {
-  return `Analyze these detected guitar notes: ${inputNotes.join(', ')}.
-Chord candidates: ${matches.map(match => `${match.name} (${match.confidence}%)`).join(', ') || 'none'}.
-Return only JSON with keys: chord, confidence, notes, feedback, practiceTip.
-Keep feedback and practiceTip under 18 words each.`;
-}
-
-function audioChordPrompt(matches) {
-  return `Analyze this short guitar recording. The player may strum a full chord.
-Chord candidates from the app: ${matches.map(match => `${match.name} (${match.confidence}%)`).join(', ') || 'none'}.
-Return only JSON with keys: chord, confidence, notes, feedback, practiceTip.
-If the audio is unclear, set chord to "unclear" and explain briefly.
-Keep feedback and practiceTip under 18 words each.`;
-}
-
-async function fetchGeminiChordFeedback(inputNotes, matches) {
-  if (!process.env.GEMINI_API_KEY) return null;
-
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-    method: 'POST',
-    headers: {
-      'x-goog-api-key': process.env.GEMINI_API_KEY,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: chordPrompt(inputNotes, matches) }]
-        }
-      ],
-      generationConfig: {
-        responseMimeType: 'application/json'
-      }
-    })
-  });
-
-  if (!response.ok) throw new Error(`Gemini API HTTP ${response.status}`);
-  return parseAiJson(geminiText(await response.json()));
-}
-
-async function fetchGeminiAudioChordFeedback(audioBase64, mimeType, matches = []) {
-  if (!process.env.GEMINI_API_KEY) return null;
-
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-    method: 'POST',
-    headers: {
-      'x-goog-api-key': process.env.GEMINI_API_KEY,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: audioChordPrompt(matches) },
-            {
-              inline_data: {
-                mime_type: mimeType,
-                data: audioBase64
-              }
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        responseMimeType: 'application/json'
-      }
-    })
-  });
-
-  if (!response.ok) throw new Error(`Gemini audio API HTTP ${response.status}`);
-  return parseAiJson(geminiText(await response.json()));
-}
-
-async function fetchAiChordFeedback(inputNotes, matches) {
-  if (process.env.GEMINI_API_KEY) return fetchGeminiChordFeedback(inputNotes, matches);
-  if (!process.env.OPENAI_API_KEY) return null;
-
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
-      instructions: 'You are a concise guitar teacher. Return only valid JSON.',
-      input: chordPrompt(inputNotes, matches)
-    })
-  });
-
-  if (!response.ok) throw new Error(`OpenAI API HTTP ${response.status}`);
-
-  return parseAiJson(responseText(await response.json()));
-}
-
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -692,41 +564,35 @@ app.post('/api/chords/analyze', async (req, res) => {
     matches = scoreChords(inputNotes, LOCAL_CHORDS);
   }
 
-  let ai = null;
-  let aiError = null;
-  try {
-    ai = await fetchAiChordFeedback(inputNotes, matches);
-  } catch (error) {
-    aiError = error.message;
-  }
-
-  res.json({ source, externalApiError, inputNotes, matches, ai, aiError });
+  res.json({ source, externalApiError, inputNotes, matches });
 });
 
 app.post('/api/chords/analyze-audio', async (req, res) => {
-  const { audioBase64, mimeType = 'audio/webm', noteHints = [] } = req.body;
-  if (!audioBase64) return res.status(400).json({ error: 'audioBase64 required' });
-  if (!process.env.GEMINI_API_KEY) return res.status(400).json({ error: 'GEMINI_API_KEY required for audio analysis' });
-
+  const { noteHints = [] } = req.body;
   const inputNotes = uniqueNotes(noteHints);
   const hintMatches = inputNotes.length >= 2 ? scoreChords(inputNotes, LOCAL_CHORDS) : [];
 
-  try {
-    const ai = await fetchGeminiAudioChordFeedback(audioBase64, mimeType, hintMatches);
-    res.json({
-      source: 'Gemini audio analysis',
-      inputNotes,
-      matches: hintMatches,
-      ai
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: 'Gemini audio analysis failed',
-      aiError: error.message,
+  if (inputNotes.length < 2) {
+    return res.status(400).json({
+      error: 'Play 2-4 clear notes first',
       inputNotes,
       matches: hintMatches
     });
   }
+
+  const bestMatch = hintMatches[0] || null;
+  res.json({
+    source: 'Local chord analysis',
+    inputNotes,
+    matches: hintMatches,
+    chord: bestMatch ? {
+      chord: bestMatch.name,
+      confidence: bestMatch.confidence,
+      notes: bestMatch.notes,
+      feedback: 'Matched from detected notes.',
+      practiceTip: 'Pick each string clearly for a steadier chord match.'
+    } : null
+  });
 });
 
 app.get('/api/music/key-suggest', auth, (req, res) => {

@@ -101,7 +101,7 @@
             <div class="battle-meter-row">
               <div class="battle-readout compact">
                 <div class="det-display" id="det-note">–</div>
-                <div class="slbl tc">Detected Pitch</div>
+                <div class="slbl tc" id="det-label">Chord</div>
               </div>
               <div class="battle-readout compact tuning-card">
                 <div class="slbl tc">Tuning</div>
@@ -113,7 +113,6 @@
             <div class="battle-action-row">
               <button class="btn btn-gold" onclick="Battle.playTargetNote()">▶ Hear Note</button>
               <button class="btn btn-gold" onclick="Battle.nextNote()">↻ New Note</button>
-              <button class="btn btn-gold" onclick="Battle.recordAndAnalyzeChord()">AI Full Chord 3s</button>
               <button class="btn btn-red"  onclick="Battle.flee()">✕ Flee</button>
             </div>
             <div id="chord-analysis" class="chord-analysis hidden"></div>

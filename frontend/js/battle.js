@@ -57,6 +57,7 @@ const Battle = {
   songChordMeta: null,
   targetChord: null,
   chordRecording: false,
+  detectedChordResult: null,
 
   audioCtx: null,
   analyser: null,
@@ -171,7 +172,8 @@ const Battle = {
 
     this.setText('tgt-note', pick.symbol);
     this.setText('tgt-hz', `Play chord tones: ${pick.notes.join(' - ')}`);
-    this.setText('det-note', '-');
+    if (!this.detectedChordResult) this.setText('det-note', '-');
+    this.setText('det-label', 'Chord');
     this.setText('cents-val', '-- cents');
     this.setNeedle(50);
     this.updateGuitarGuide();
@@ -188,7 +190,8 @@ const Battle = {
 
     this.setText('tgt-note', pick.symbol);
     this.setText('tgt-hz', `Play chord tones: ${pick.notes.join(' - ')}`);
-    this.setText('det-note', '-');
+    if (!this.detectedChordResult) this.setText('det-note', '-');
+    this.setText('det-label', 'Chord');
     this.setText('cents-val', '-- cents');
     this.setNeedle(50);
     this.updateGuitarGuide();
@@ -459,12 +462,12 @@ const Battle = {
     if (freq > 50 && freq < 1400) {
       this.handleDetectedFrequency(freq, detection.clarity);
     } else {
-      this.setText('det-note', '-');
+      if (!this.detectedChordResult) this.setText('det-note', '-');
       this.setText('cents-val', '-- cents');
       this.setNeedle(50);
       this.matchHeld = 0;
 
-      if (level > 0.003) {
+      if (level > 0.004) {
         this.lastSignalAt = performance.now();
         this.setFeedback(`Mic hears sound. Pick one string clearly. Level ${level.toFixed(3)}.`);
       } else if (performance.now() - this.lastSignalAt > 1200) {
@@ -485,9 +488,10 @@ const Battle = {
     const targetBase = this.target.name;
     const cents = Math.round(1200 * Math.log2(freq / note.freq));
     const absCents = Math.abs(cents);
-    const isMatch = note.name === targetBase && absCents <= 25;
+    const isMatch = note.name === targetBase && absCents <= 23;
 
-    this.setText('det-note', `${note.name}${note.octave}`);
+    this.setText('det-note', this.detectedChordResult || `${note.name}${note.octave}`);
+    this.setText('det-label', 'Chord');
     this.setText('cents-val', `${cents >= 0 ? '+' : ''}${cents} cents`);
     this.setNeedle(Math.max(0, Math.min(100, 50 + cents / 2)));
     this.rememberDetectedNote(note.name);
@@ -514,15 +518,18 @@ const Battle = {
     const cents = Math.round(1200 * Math.log2(freq / note.freq));
     const absCents = Math.abs(cents);
 
-    this.setText('det-note', `${note.name}${note.octave}`);
     this.setText('cents-val', `${cents >= 0 ? '+' : ''}${cents} cents`);
     this.setNeedle(Math.max(0, Math.min(100, 50 + cents / 2)));
     this.rememberPlayedNote(note.name);
 
     const played = [...new Set(this.recentPlayedNotes.map(item => item.name))];
+    const chordGuess = this.guessChordFromNotes(played);
+    this.setText('det-note', this.detectedChordResult || (chordGuess ? chordGuess.symbol : '-'));
+    this.setText('det-label', 'Chord');
+
     const matched = targetNotes.filter(target => played.includes(target));
     const needed = Math.min(3, targetNotes.length);
-    const isTargetTone = targetNotes.includes(note.name) && absCents <= 35;
+    const isTargetTone = targetNotes.includes(note.name) && absCents <= 32;
 
     const detected = document.getElementById('det-note');
     if (detected) detected.classList.toggle('matched', isTargetTone);
@@ -530,7 +537,7 @@ const Battle = {
     if (matched.length >= needed) {
       this.matchHeld += 1;
       this.setFeedback(`${this.targetChord.symbol}: ${matched.join(' - ')} found. Hold the chord. Clarity ${(clarity * 100).toFixed(0)}%.`);
-      if (this.matchHeld >= 8) this.registerHit(false);
+      if (this.matchHeld >= 9) this.registerHit(false);
       return;
     }
 
@@ -548,6 +555,11 @@ const Battle = {
     this.streak += 1;
     this.monsterHp = Math.max(0, this.monsterHp - 1);
     const targetLabel = this.targetChord ? this.targetChord.symbol : `${this.target.name}${this.target.octave}`;
+    this.detectedChordResult = targetLabel;
+    this.setText('det-note', targetLabel);
+    this.setText('det-label', 'Chord');
+    const detected = document.getElementById('det-note');
+    if (detected) detected.classList.add('matched');
     this.addLog(`${perfect ? 'Perfect' : 'Hit'} ${targetLabel} +${points}`);
 
     if (this.monsterHp === 0) {
@@ -557,13 +569,13 @@ const Battle = {
     }
 
     this.updateStats();
-    setTimeout(() => this.nextNote(), 450);
+    setTimeout(() => this.nextNote(), 3000);
   },
 
   detectRealtimePitch(buffer, sampleRate, level) {
     if (this.pitchDetector) {
       const [pitch, clarity] = this.pitchDetector.findPitch(buffer, sampleRate);
-      if (level > 0.003 && clarity >= 0.62) {
+      if (level > 0.004 && clarity >= 0.67) {
         return { freq: pitch, clarity };
       }
       return { freq: -1, clarity };
@@ -700,6 +712,22 @@ const Battle = {
     this.recentPlayedNotes = this.recentPlayedNotes.filter(item => now - item.time < 4500).slice(-16);
   },
 
+  guessChordFromNotes(notes) {
+    const played = [...new Set(notes)];
+    if (played.length < 2) return null;
+
+    const candidates = [...this.songChordTargets, ...this.targets];
+    return candidates
+      .map(chord => {
+        const matched = chord.notes.filter(note => played.includes(note)).length;
+        const extra = played.filter(note => !chord.notes.includes(note)).length;
+        const score = matched / chord.notes.length - extra * 0.2;
+        return { chord, matched, score };
+      })
+      .filter(item => item.matched >= 2)
+      .sort((a, b) => b.score - a.score || b.matched - a.matched)[0]?.chord || null;
+  },
+
   async recordAndAnalyzeChord() {
     const result = document.getElementById('chord-analysis');
     if (!result) return;
@@ -712,9 +740,10 @@ const Battle = {
 
     this.detectedNotes = [];
     this.chordRecording = true;
+    this.detectedChordResult = null;
     result.classList.remove('hidden');
     result.innerHTML = '<div class="chord-analysis-title">Recording full chord...</div><div class="chord-analysis-meta">Strum the full chord clearly for 3 seconds.</div>';
-    this.setFeedback('Recording full chord audio for Gemini. Strum once or twice clearly.');
+    this.setFeedback('Recording chord notes. Strum once or twice clearly.');
 
     try {
       const recording = await this.recordChordAudio(3000);
@@ -770,7 +799,7 @@ const Battle = {
     const result = document.getElementById('chord-analysis');
     const noteHints = [...new Set(this.detectedNotes.map(item => item.name))];
 
-    result.innerHTML = '<div class="chord-analysis-title">AI analyzing audio...</div><div class="chord-analysis-meta">Sending full chord recording to Gemini.</div>';
+    result.innerHTML = '<div class="chord-analysis-title">Analyzing chord...</div><div class="chord-analysis-meta">Matching detected notes locally.</div>';
 
     try {
       const apiBase = typeof App !== 'undefined' ? App.baseUrl : `${location.origin}/api`;
@@ -781,19 +810,23 @@ const Battle = {
       });
       const data = await this.readJsonResponse(res);
 
-      if (!res.ok) throw new Error(data.aiError || data.error || 'Audio analysis failed');
+      if (!res.ok) throw new Error(data.error || 'Chord analysis failed');
 
-      const ai = data.ai || {};
+      const chord = data.chord || {};
+      const chordName = chord.chord || 'unclear';
+      this.detectedChordResult = chordName;
+      this.setText('det-note', chordName);
+      this.setText('det-label', 'Chord');
       result.innerHTML = `
-        <div class="chord-analysis-title">${this.escapeHtml(ai.chord || 'unclear')} <span>${this.escapeHtml(String(ai.confidence || '--'))}%</span></div>
-        <div class="chord-analysis-meta">AI: ${this.escapeHtml(ai.feedback || 'No feedback returned.')}</div>
-        <div class="chord-analysis-meta">Notes: ${this.escapeHtml(Array.isArray(ai.notes) ? ai.notes.join(' - ') : ai.notes || 'unknown')}</div>
-        <div class="chord-analysis-meta">Tip: ${this.escapeHtml(ai.practiceTip || 'Strum slowly and let the chord ring.')}</div>
+        <div class="chord-analysis-title">${this.escapeHtml(chordName)} <span>${this.escapeHtml(String(chord.confidence || '--'))}%</span></div>
+        <div class="chord-analysis-meta">${this.escapeHtml(chord.feedback || 'Matched from detected notes.')}</div>
+        <div class="chord-analysis-meta">Notes: ${this.escapeHtml(Array.isArray(chord.notes) ? chord.notes.join(' - ') : chord.notes || 'unknown')}</div>
+        <div class="chord-analysis-meta">Tip: ${this.escapeHtml(chord.practiceTip || 'Strum slowly and let the chord ring.')}</div>
         <div class="chord-analysis-meta">Source: ${this.escapeHtml(data.source)}</div>
       `;
     } catch (err) {
       console.error('Audio chord analysis error:', err);
-      result.innerHTML = `<div class="chord-analysis-title">AI audio analysis unavailable</div><div class="chord-analysis-meta">${this.escapeHtml(err.message)}</div>`;
+      result.innerHTML = `<div class="chord-analysis-title">Chord analysis unavailable</div><div class="chord-analysis-meta">${this.escapeHtml(err.message)}</div>`;
     }
   },
 
@@ -828,19 +861,15 @@ const Battle = {
       }
 
       const best = data.matches[0];
+      this.detectedChordResult = best.name;
+      this.setText('det-note', best.name);
+      this.setText('det-label', 'Chord');
       const image = best.image ? `<img class="chord-analysis-img" src="${best.image}" alt="${this.escapeHtml(best.name)} chord diagram">` : '';
-      const aiBlock = data.ai ? `
-        <div class="chord-analysis-ai">
-          <div class="chord-analysis-meta">AI: ${this.escapeHtml(data.ai.feedback || '')}</div>
-          <div class="chord-analysis-meta">Tip: ${this.escapeHtml(data.ai.practiceTip || '')}</div>
-        </div>
-      ` : data.aiError ? `<div class="chord-analysis-meta">AI unavailable: ${this.escapeHtml(data.aiError)}</div>` : '';
       result.innerHTML = `
-        <div class="chord-analysis-title">${this.escapeHtml(data.ai && data.ai.chord || best.name)} <span>${this.escapeHtml(String(data.ai && data.ai.confidence || best.confidence))}%</span></div>
+        <div class="chord-analysis-title">${this.escapeHtml(best.name)} <span>${this.escapeHtml(String(best.confidence))}%</span></div>
         <div class="chord-analysis-meta">Detected: ${this.escapeHtml(data.inputNotes.join(' - '))}</div>
         <div class="chord-analysis-meta">Chord tones: ${this.escapeHtml(best.notes.join(' - '))}</div>
         <div class="chord-analysis-meta">Source: ${this.escapeHtml(data.source)}</div>
-        ${aiBlock}
         ${image}
       `;
     } catch (err) {
