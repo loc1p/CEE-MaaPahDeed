@@ -2,18 +2,18 @@
 
 ## App Name
 
-MaaPahDeed - AI Guitar Learning RPG
+MaaPahDeed - Guitar Learning RPG
 
 ## What It Does
 
-MaaPahDeed is a web application for guitar learners who want to practice chords in a more interactive way. The app combines an RPG-style Battle mode, real song chord lookup, a guitar fretboard guide, saved song libraries, and a camera-based Chord Cam mode to make guitar practice more visual and engaging.
+MaaPahDeed is a web application for guitar learners who want to practice chords in a more interactive way. The app combines an RPG-style Battle mode, local chord detection, real song chord lookup, a guitar fretboard guide, saved song libraries, and a camera-based Chord Cam mode to make guitar practice more visual and engaging.
 
-Users can create their own account, search for a real song, load its chords into Battle mode, and practice those chords while seeing where to press on the guitar fretboard.
+Users can create their own account, search for a real song, load its chords into Battle mode, and practice those chords while seeing where to press on the guitar fretboard. During Battle mode, the app listens through the microphone, detects chord tones locally, and shows the chord that was hit in the Chord readout.
 
 ## Features Built
 
 - User registration, login, session restore, and logout
-- Guitar Battle mode with chord targets
+- Guitar Battle mode with chord targets and local chord hit detection
 - Fretboard guide showing chord finger positions
 - Song Chord Quest using external song/chord API data
 - Chord Cam using camera-based hand/gesture tracking
@@ -41,7 +41,11 @@ The challenging requirement score is capped at 20 points, so Tier S is enough to
 
 ## Live URL
 
-TODO: add deployed public URL
+https://maapahdeed.onrender.com/
+
+## Backend URL
+
+https://maapahdeed.onrender.com/api
 
 ## GitHub URL
 
@@ -54,10 +58,10 @@ https://github.com/loc1p/CEE-MaaPahDeed
 - Database: MongoDB, Mongoose
 - Authentication: JWT, bcryptjs
 - APIs / Libraries: external song/chord lookup, MusicBrainz/Cover Art metadata, Chords API fallback, MediaPipe Hands, MediaPipe Face Mesh, Web Audio API, Pitchy
-- Deployment: TODO, for example Render/Railway/Vercel
+- Deployment: Render web service using `render.yaml`, with MongoDB Atlas for the database
 
 ## Team Members
 
-- TODO: team member 1
-- TODO: team member 2
-- TODO: team member 3
+- Supphanat Thanaphon
+- Wiramorn Ounruan
+- Prompassorn Piriyavinit

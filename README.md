@@ -1,11 +1,11 @@
 # MaaPahDeed
 
-MaaPahDeed is an AI-powered guitar learning web application built as a Computer Engineering Essential final project. The app helps guitar learners practice chord recognition through an RPG-style Battle mode, camera-based Chord Cam interaction, real song chord lookup, saved song collections, and a small music dashboard.
+MaaPahDeed is a guitar learning web application built as a Computer Engineering Essential final project. The app helps guitar learners practice chord recognition through an RPG-style Battle mode, local chord detection, camera-based Chord Cam interaction, real song chord lookup, saved song collections, and a small music dashboard.
 
 ## Features
 
 - User registration, login, session restore, and logout
-- Battle mode for guitar chord practice
+- Battle mode for guitar chord practice with local microphone-based chord hit detection
 - Guitar fretboard guide that shows chord finger positions
 - Song Chord Quest that loads chords for real songs
 - Chord Cam using camera-based hand/gesture tracking
@@ -13,7 +13,7 @@ MaaPahDeed is an AI-powered guitar learning web application built as a Computer 
 - Song Library Dashboard with recent songs, saved songs, and top searched songs
 - Light/Dark theme toggle with saved user preference
 - External API integration for song/chord lookup and music metadata
-- Optional AI audio chord analysis when a valid AI API key is configured
+- Chord readout that shows the latest successfully hit chord
 
 ## Final Project Requirement Mapping
 
@@ -22,8 +22,8 @@ MaaPahDeed is an AI-powered guitar learning web application built as a Computer 
 | Requirement | How MaaPahDeed Meets It |
 | --- | --- |
 | User Login | Users can register an account, log in, stay signed in across refreshes, and log out. Passwords are hashed in the backend. |
-| API Integration | The backend calls external music/chord APIs, including E-Chords/MusicBrainz-style song metadata lookup and chord analysis endpoints. API responses are used directly in Battle and Song Chord Quest. |
-| Deployed & Live | Add the public deployment URL after deployment. The app is designed to run with a deployed static frontend and deployed Node/Express backend. |
+| API Integration | The backend calls external music/chord APIs, including E-Chords/MusicBrainz-style song metadata lookup and chord lookup endpoints. API responses are used directly in Battle and Song Chord Quest. |
+| Deployed & Live | Add the public deployment URL after deployment. The app is designed to run as one public Render web service where Express serves both the API and static frontend. |
 
 ### Challenging Requirements
 
@@ -46,7 +46,7 @@ The challenging requirement score is capped at 20 points, so one Tier S feature 
 - Database: MongoDB with Mongoose
 - Authentication: JWT, bcryptjs
 - APIs / Libraries: E-Chords style chord lookup, MusicBrainz/Cover Art metadata lookup, Chords API fallback, MediaPipe Hands, MediaPipe Face Mesh, Web Audio API, Pitchy
-- Deployment target: static frontend hosting plus Node backend hosting
+- Deployment target: Render web service with MongoDB Atlas
 
 ## Project Structure
 
@@ -86,13 +86,9 @@ Use `backend/.env.example` as the template:
 ```env
 MONGO_URI=mongodb://127.0.0.1:27017/maapah
 JWT_SECRET=change-this-secret
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4.1-mini
-GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.5-flash
 ```
 
-Important: do not commit `backend/.env`. API keys and secrets must stay private.
+Important: do not commit `backend/.env`. Database URLs, JWT secrets, and other private configuration must stay private.
 
 ## Local Setup
 
@@ -115,7 +111,6 @@ Then edit `backend/.env` and set:
 
 - `MONGO_URI`
 - `JWT_SECRET`
-- optional AI API keys if using audio AI analysis
 
 ### 3. Start MongoDB
 
@@ -154,10 +149,12 @@ The backend serves the frontend from the `frontend/` folder. Camera and micropho
 
 ## Public Deployment
 
-This repo includes `render.yaml` for deploying one public Render web service. The Express backend serves both the API and the static frontend, so the final public URL will look like:
+This repo includes `render.yaml` for deploying one public Render web service. The Express backend serves both the API and the static frontend.
 
 ```text
-https://<your-render-service>.onrender.com
+Live URL: https://maapahdeed.onrender.com/
+Backend URL: https://maapahdeed.onrender.com/api
+Health Check: https://maapahdeed.onrender.com/api/health
 ```
 
 Deployment steps:
@@ -167,8 +164,6 @@ Deployment steps:
 3. In Render, create a new Blueprint from this repo. Render reads `render.yaml`.
 4. Add required environment variables in Render:
    - `MONGO_URI`
-   - optional `OPENAI_API_KEY`
-   - optional `GEMINI_API_KEY`
 5. Deploy, then open `/api/health` on the public URL to verify the backend.
 
 ## Useful API Routes
@@ -191,7 +186,7 @@ Deployment steps:
 ### Chords / Battle
 
 - `POST /api/chords/analyze`
-- `POST /api/chords/analyze-audio`
+- `POST /api/chords/analyze-audio` - local chord matching from detected note hints
 
 ### Other
 
@@ -202,14 +197,14 @@ Deployment steps:
 
 Recommended deployment:
 
-- Frontend and backend together: Render, Railway, or similar Node hosting
+- Frontend and backend together: Render Blueprint using `render.yaml`
 - Database: MongoDB Atlas
-- Environment variables: set them in the hosting dashboard
+- Environment variables: set `MONGO_URI` in the Render dashboard
 
 After deployment, update this section:
 
-- Live URL: TODO
-- Backend URL: TODO
+- Live URL: https://maapahdeed.onrender.com/
+- Backend URL: https://maapahdeed.onrender.com/api
 - GitHub URL: https://github.com/loc1p/CEE-MaaPahDeed
 
 ## Demo Checklist
@@ -223,6 +218,7 @@ Use this checklist for the final video:
 - Search for a real song in Song Chord Quest
 - Show the external API result being used as Battle chord targets
 - Play Battle mode and show the fretboard chord guide
+- Hit a target chord and show the latest hit chord in the Chord readout
 - Open Chord Cam and show camera-based interaction
 - Save a song
 - Refresh the page and show the saved song still exists
@@ -233,12 +229,13 @@ Use this checklist for the final video:
 
 ## Team Members
 
-- TODO: team member 1
-- TODO: team member 2
-- TODO: team member 3
+1. Supphanat Thanaphon
+2. Wiramorn Ounruan
+3. Prompassorn Piriyavinit
 
 ## Links
 
 - GitHub: https://github.com/loc1p/CEE-MaaPahDeed
-- Live URL: TODO
+- Live URL: https://maapahdeed.onrender.com/
+- Backend URL: https://maapahdeed.onrender.com/api
 - Video URL: TODO
