@@ -56,7 +56,6 @@ const Battle = {
   songChordIndex: 0,
   songChordMeta: null,
   targetChord: null,
-  chordRecording: false,
   detectedChordResult: null,
 
   audioCtx: null,
@@ -494,8 +493,6 @@ const Battle = {
     this.setText('det-label', 'Chord');
     this.setText('cents-val', `${cents >= 0 ? '+' : ''}${cents} cents`);
     this.setNeedle(Math.max(0, Math.min(100, 50 + cents / 2)));
-    this.rememberDetectedNote(note.name);
-
     const detected = document.getElementById('det-note');
     if (detected) detected.classList.toggle('matched', isMatch);
 
@@ -692,17 +689,6 @@ const Battle = {
     });
   },
 
-  rememberDetectedNote(noteName) {
-    if (!this.chordRecording) return;
-
-    const now = performance.now();
-    const recent = this.detectedNotes[this.detectedNotes.length - 1];
-    if (recent && recent.name === noteName && now - recent.time < 450) return;
-
-    this.detectedNotes.push({ name: noteName, time: now });
-    this.detectedNotes = this.detectedNotes.filter(item => now - item.time < 8000).slice(-12);
-  },
-
   rememberPlayedNote(noteName) {
     const now = performance.now();
     const recent = this.recentPlayedNotes[this.recentPlayedNotes.length - 1];
@@ -728,113 +714,11 @@ const Battle = {
       .sort((a, b) => b.score - a.score || b.matched - a.matched)[0]?.chord || null;
   },
 
-  async recordAndAnalyzeChord() {
-    const result = document.getElementById('chord-analysis');
-    if (!result) return;
-
-    if (!this.micStream || !this.analyser) {
-      result.classList.remove('hidden');
-      result.innerHTML = '<div class="chord-analysis-title">Start Battle first</div><div class="chord-analysis-meta">Click BEGIN THE QUEST, allow microphone access, then record a chord.</div>';
-      return;
-    }
-
-    this.detectedNotes = [];
-    this.chordRecording = true;
-    this.detectedChordResult = null;
-    result.classList.remove('hidden');
-    result.innerHTML = '<div class="chord-analysis-title">Recording full chord...</div><div class="chord-analysis-meta">Strum the full chord clearly for 3 seconds.</div>';
-    this.setFeedback('Recording chord notes. Strum once or twice clearly.');
-
-    try {
-      const recording = await this.recordChordAudio(3000);
-      this.chordRecording = false;
-      await this.analyzeChordAudio(recording);
-    } catch (err) {
-      console.error('Chord recording error:', err);
-      this.chordRecording = false;
-      result.innerHTML = '<div class="chord-analysis-title">Recording failed</div><div class="chord-analysis-meta">Check microphone permission and try again.</div>';
-    }
-  },
-
-  recordChordAudio(durationMs) {
-    return new Promise((resolve, reject) => {
-      if (!window.MediaRecorder) {
-        reject(new Error('MediaRecorder unsupported'));
-        return;
-      }
-
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/webm';
-      const recorder = new MediaRecorder(this.micStream, { mimeType });
-      const chunks = [];
-
-      recorder.ondataavailable = event => {
-        if (event.data && event.data.size) chunks.push(event.data);
-      };
-      recorder.onerror = event => reject(event.error || new Error('MediaRecorder error'));
-      recorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: mimeType });
-        const audioBase64 = await this.blobToBase64(blob);
-        resolve({ audioBase64, mimeType });
-      };
-
-      recorder.start();
-      setTimeout(() => {
-        if (recorder.state !== 'inactive') recorder.stop();
-      }, durationMs);
-    });
-  },
-
-  blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(String(reader.result).split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  },
-
-  async analyzeChordAudio(recording) {
-    const result = document.getElementById('chord-analysis');
-    const noteHints = [...new Set(this.detectedNotes.map(item => item.name))];
-
-    result.innerHTML = '<div class="chord-analysis-title">Analyzing chord...</div><div class="chord-analysis-meta">Matching detected notes locally.</div>';
-
-    try {
-      const apiBase = typeof App !== 'undefined' ? App.baseUrl : `${location.origin}/api`;
-      const res = await fetch(`${apiBase}/chords/analyze-audio`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...recording, noteHints })
-      });
-      const data = await this.readJsonResponse(res);
-
-      if (!res.ok) throw new Error(data.error || 'Chord analysis failed');
-
-      const chord = data.chord || {};
-      const chordName = chord.chord || 'unclear';
-      this.detectedChordResult = chordName;
-      this.setText('det-note', chordName);
-      this.setText('det-label', 'Chord');
-      result.innerHTML = `
-        <div class="chord-analysis-title">${this.escapeHtml(chordName)} <span>${this.escapeHtml(String(chord.confidence || '--'))}%</span></div>
-        <div class="chord-analysis-meta">${this.escapeHtml(chord.feedback || 'Matched from detected notes.')}</div>
-        <div class="chord-analysis-meta">Notes: ${this.escapeHtml(Array.isArray(chord.notes) ? chord.notes.join(' - ') : chord.notes || 'unknown')}</div>
-        <div class="chord-analysis-meta">Tip: ${this.escapeHtml(chord.practiceTip || 'Strum slowly and let the chord ring.')}</div>
-        <div class="chord-analysis-meta">Source: ${this.escapeHtml(data.source)}</div>
-      `;
-    } catch (err) {
-      console.error('Audio chord analysis error:', err);
-      result.innerHTML = `<div class="chord-analysis-title">Chord analysis unavailable</div><div class="chord-analysis-meta">${this.escapeHtml(err.message)}</div>`;
-    }
-  },
-
   async analyzeChord() {
     const result = document.getElementById('chord-analysis');
     if (!result) return;
 
-    const notes = [...new Set(this.detectedNotes.map(item => item.name))];
+    const notes = [...new Set(this.recentPlayedNotes.map(item => item.name))];
     result.classList.remove('hidden');
 
     if (notes.length < 2) {

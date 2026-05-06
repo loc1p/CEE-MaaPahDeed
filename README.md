@@ -186,7 +186,6 @@ Deployment steps:
 ### Chords / Battle
 
 - `POST /api/chords/analyze`
-- `POST /api/chords/analyze-audio` - local chord matching from detected note hints
 
 ### Other
 

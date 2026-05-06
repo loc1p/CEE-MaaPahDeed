@@ -567,34 +567,6 @@ app.post('/api/chords/analyze', async (req, res) => {
   res.json({ source, externalApiError, inputNotes, matches });
 });
 
-app.post('/api/chords/analyze-audio', async (req, res) => {
-  const { noteHints = [] } = req.body;
-  const inputNotes = uniqueNotes(noteHints);
-  const hintMatches = inputNotes.length >= 2 ? scoreChords(inputNotes, LOCAL_CHORDS) : [];
-
-  if (inputNotes.length < 2) {
-    return res.status(400).json({
-      error: 'Play 2-4 clear notes first',
-      inputNotes,
-      matches: hintMatches
-    });
-  }
-
-  const bestMatch = hintMatches[0] || null;
-  res.json({
-    source: 'Local chord analysis',
-    inputNotes,
-    matches: hintMatches,
-    chord: bestMatch ? {
-      chord: bestMatch.name,
-      confidence: bestMatch.confidence,
-      notes: bestMatch.notes,
-      feedback: 'Matched from detected notes.',
-      practiceTip: 'Pick each string clearly for a steadier chord match.'
-    } : null
-  });
-});
-
 app.get('/api/music/key-suggest', auth, (req, res) => {
   const notes = (req.query.notes || '').split(',').map(note => note.trim()).filter(Boolean);
   const scales = {
