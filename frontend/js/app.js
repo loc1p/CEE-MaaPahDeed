@@ -1,5 +1,9 @@
 const App = {
-  baseUrl: location.protocol === 'file:' ? 'http://localhost:5001/api' : `${location.origin}/api`,
+  baseUrl: location.protocol === 'file:'
+    ? 'http://localhost:5001/api'
+    : location.hostname.endsWith('.web.app') || location.hostname.endsWith('.firebaseapp.com')
+      ? 'https://maapahdeed.onrender.com/api'
+      : `${location.origin}/api`,
   user: null,
   token: localStorage.getItem('maapah_token'),
   cachedUser: JSON.parse(localStorage.getItem('maapah_user') || 'null'),
@@ -356,7 +360,7 @@ App.readJsonResponse = async function readJsonResponse(response) {
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`Expected JSON, got ${text.slice(0, 80) || response.statusText}`);
+    throw new Error(`Server returned ${response.status || 'a non-JSON response'}: ${response.statusText || text.slice(0, 80) || 'Unexpected response'}`);
   }
 };
 

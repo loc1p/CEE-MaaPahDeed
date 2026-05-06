@@ -590,6 +590,20 @@ app.get('/api/music/key-suggest', auth, (req, res) => {
 });
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+
+  const status = error.status || error.statusCode || 500;
+  const isPayloadError = error.type === 'entity.too.large' || status === 413;
+  res.status(status).json({
+    error: isPayloadError
+      ? 'Request payload was too large. Please try again with less data.'
+      : 'Server error while processing the request.',
+    details: process.env.NODE_ENV === 'production' ? undefined : error.message
+  });
+});
+
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
 
 app.listen(PORT, () => console.log(`MaaPahDeed running on http://localhost:${PORT}`));

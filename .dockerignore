@@ -1,0 +1,11 @@
+node_modules
+backend/node_modules
+backend/.env
+backend/*.log
+backend/.venv-lvchordia
+.venv-lvchordia
+.git
+.DS_Store
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
