@@ -57,11 +57,6 @@ const Battle = {
   songChordMeta: null,
   targetChord: null,
   chordRecording: false,
-  aiAnalyzeInFlight: false,
-  aiChordThreshold: 0.02,
-  aiRecordingMs: 3000,
-  aiCooldownMs: 5500,
-  lastAiAnalyzeAt: 0,
   detectedChordResult: null,
 
   audioCtx: null,
@@ -177,13 +172,12 @@ const Battle = {
 
     this.setText('tgt-note', pick.symbol);
     this.setText('tgt-hz', `Play chord tones: ${pick.notes.join(' - ')}`);
-    this.detectedChordResult = null;
-    this.setDetectedChordDisplay('-', { muted: false, matched: false });
+    if (!this.detectedChordResult) this.setText('det-note', '-');
     this.setText('det-label', 'Chord');
     this.setText('cents-val', '-- cents');
     this.setNeedle(50);
     this.updateGuitarGuide();
-    this.setFeedback(`Target chord: ${pick.symbol}. Strum clearly. AI listens when mic level reaches ${this.aiChordThreshold.toFixed(2)}.`);
+    this.setFeedback(`Target chord: ${pick.symbol}. Strum or pick its notes clearly.`);
   },
 
   nextSongChord() {
@@ -196,13 +190,12 @@ const Battle = {
 
     this.setText('tgt-note', pick.symbol);
     this.setText('tgt-hz', `Play chord tones: ${pick.notes.join(' - ')}`);
-    this.detectedChordResult = null;
-    this.setDetectedChordDisplay('-', { muted: false, matched: false });
+    if (!this.detectedChordResult) this.setText('det-note', '-');
     this.setText('det-label', 'Chord');
     this.setText('cents-val', '-- cents');
     this.setNeedle(50);
     this.updateGuitarGuide();
-    this.setFeedback(`Target chord: ${pick.symbol}. Strum clearly. AI listens when mic level reaches ${this.aiChordThreshold.toFixed(2)}.`);
+    this.setFeedback(`Target chord: ${pick.symbol}. Strum or pick its notes clearly.`);
   },
 
   loadSongChords(chords, meta = {}) {
@@ -463,13 +456,6 @@ const Battle = {
 
     this.analyser.getFloatTimeDomainData(this.timeDomain);
     const level = this.getRms(this.timeDomain);
-    this.maybeStartAutoAiChord(level);
-
-    if (this.chordRecording || this.aiAnalyzeInFlight) {
-      this.rafId = requestAnimationFrame(() => this.tick());
-      return;
-    }
-
     const detection = this.detectRealtimePitch(this.timeDomain, this.audioCtx.sampleRate, level);
     const freq = detection.freq;
 
@@ -483,10 +469,7 @@ const Battle = {
 
       if (level > 0.004) {
         this.lastSignalAt = performance.now();
-        const hint = this.targetChord
-          ? `AI trigger threshold ${this.aiChordThreshold.toFixed(2)}. Level ${level.toFixed(3)}.`
-          : `Mic hears sound. Pick one string clearly. Level ${level.toFixed(3)}.`;
-        this.setFeedback(hint);
+        this.setFeedback(`Mic hears sound. Pick one string clearly. Level ${level.toFixed(3)}.`);
       } else if (performance.now() - this.lastSignalAt > 1200) {
         this.setFeedback('No guitar signal detected. Check mic input or move closer.');
       }
@@ -498,7 +481,7 @@ const Battle = {
   handleDetectedFrequency(freq, clarity = 1) {
     const note = this.frequencyToNote(freq);
     if (this.targetChord) {
-      this.handleDetectedChordMonitor(note, freq, clarity);
+      this.handleDetectedChordNote(note, freq, clarity);
       return;
     }
 
@@ -562,24 +545,6 @@ const Battle = {
     this.setFeedback(`${this.targetChord.symbol} needs ${targetNotes.join(' - ')}. Heard: ${played.join(' - ') || note.name}.`);
   },
 
-  handleDetectedChordMonitor(note, freq, clarity = 1) {
-    const cents = Math.round(1200 * Math.log2(freq / note.freq));
-    this.setText('cents-val', `${cents >= 0 ? '+' : ''}${cents} cents`);
-    this.setNeedle(Math.max(0, Math.min(100, 50 + cents / 2)));
-    this.rememberPlayedNote(note.name);
-
-    if (!this.detectedChordResult) this.setDetectedChordDisplay('...', { muted: true });
-    this.setText('det-label', 'Chord');
-
-    const detected = document.getElementById('det-note');
-    if (detected) detected.classList.remove('matched');
-
-    const now = performance.now();
-    if (now - this.lastAiAnalyzeAt > 900) {
-      this.setFeedback(`AI chord mode. Strum ${this.targetChord.symbol}; capture starts above level ${this.aiChordThreshold.toFixed(2)}. Current ${clarity ? `clarity ${(clarity * 100).toFixed(0)}%` : `level ready`}.`);
-    }
-  },
-
   registerHit(perfect) {
     const now = performance.now();
     if (now - this.lastHitAt < 900) return;
@@ -591,8 +556,10 @@ const Battle = {
     this.monsterHp = Math.max(0, this.monsterHp - 1);
     const targetLabel = this.targetChord ? this.targetChord.symbol : `${this.target.name}${this.target.octave}`;
     this.detectedChordResult = targetLabel;
-    this.setDetectedChordDisplay(targetLabel, { matched: true });
+    this.setText('det-note', targetLabel);
     this.setText('det-label', 'Chord');
+    const detected = document.getElementById('det-note');
+    if (detected) detected.classList.add('matched');
     this.addLog(`${perfect ? 'Perfect' : 'Hit'} ${targetLabel} +${points}`);
 
     if (this.monsterHp === 0) {
@@ -761,24 +728,7 @@ const Battle = {
       .sort((a, b) => b.score - a.score || b.matched - a.matched)[0]?.chord || null;
   },
 
-  maybeStartAutoAiChord(level) {
-    if (!this.targetChord || !this.micStream || !this.analyser) return;
-    if (this.chordRecording || this.aiAnalyzeInFlight) return;
-
-    const now = performance.now();
-    if (now - this.lastAiAnalyzeAt < this.aiCooldownMs) return;
-    if (now - this.lastHitAt < 1200) return;
-    if (level < this.aiChordThreshold) return;
-
-    this.lastSignalAt = now;
-    this.runAiChordCapture('auto', level);
-  },
-
   async recordAndAnalyzeChord() {
-    await this.runAiChordCapture('manual');
-  },
-
-  async runAiChordCapture(mode = 'manual', triggerLevel = null) {
     const result = document.getElementById('chord-analysis');
     if (!result) return;
 
@@ -788,31 +738,21 @@ const Battle = {
       return;
     }
 
-    if (this.chordRecording || this.aiAnalyzeInFlight) return;
-
     this.detectedNotes = [];
     this.chordRecording = true;
-    this.aiAnalyzeInFlight = true;
-    this.lastAiAnalyzeAt = performance.now();
     this.detectedChordResult = null;
     result.classList.remove('hidden');
-    const sourceText = mode === 'auto'
-      ? `Sound crossed AI threshold${triggerLevel === null ? '' : ` (${triggerLevel.toFixed(3)})`}.`
-      : 'Manual AI chord capture started.';
-    result.innerHTML = `<div class="chord-analysis-title">Recording full chord...</div><div class="chord-analysis-meta">${this.escapeHtml(sourceText)} Strum clearly for ${Math.round(this.aiRecordingMs / 1000)} seconds.</div>`;
-    this.setFeedback('AI recording chord audio. Let the chord ring.');
+    result.innerHTML = '<div class="chord-analysis-title">Recording full chord...</div><div class="chord-analysis-meta">Strum the full chord clearly for 3 seconds.</div>';
+    this.setFeedback('Recording chord notes. Strum once or twice clearly.');
 
     try {
-      const recording = await this.recordChordAudio(this.aiRecordingMs);
+      const recording = await this.recordChordAudio(3000);
       this.chordRecording = false;
       await this.analyzeChordAudio(recording);
     } catch (err) {
       console.error('Chord recording error:', err);
       this.chordRecording = false;
       result.innerHTML = '<div class="chord-analysis-title">Recording failed</div><div class="chord-analysis-meta">Check microphone permission and try again.</div>';
-    } finally {
-      this.chordRecording = false;
-      this.aiAnalyzeInFlight = false;
     }
   },
 
@@ -836,13 +776,7 @@ const Battle = {
       recorder.onstop = async () => {
         const blob = new Blob(chunks, { type: mimeType });
         const audioBase64 = await this.blobToBase64(blob);
-        try {
-          const wav = await this.blobToWavBase64(blob);
-          resolve({ ...wav, audioBase64, originalMimeType: mimeType });
-        } catch (err) {
-          console.warn('WAV conversion failed, sending original recording:', err);
-          resolve({ audioBase64, mimeType });
-        }
+        resolve({ audioBase64, mimeType });
       };
 
       recorder.start();
@@ -861,82 +795,11 @@ const Battle = {
     });
   },
 
-  async blobToWavBase64(blob) {
-    const buffer = await blob.arrayBuffer();
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    const ctx = this.audioCtx || new AudioContextClass();
-    const audioBuffer = await ctx.decodeAudioData(buffer.slice(0));
-    const mono = this.downmixAudioBuffer(audioBuffer);
-    const wavBuffer = this.encodeWav(mono, audioBuffer.sampleRate);
-    return {
-      audioWavBase64: this.arrayBufferToBase64(wavBuffer),
-      mimeType: 'audio/wav',
-      sampleRate: audioBuffer.sampleRate,
-      duration: Number(audioBuffer.duration.toFixed(2))
-    };
-  },
-
-  downmixAudioBuffer(audioBuffer) {
-    const channels = audioBuffer.numberOfChannels;
-    const length = audioBuffer.length;
-    const mono = new Float32Array(length);
-
-    for (let channel = 0; channel < channels; channel++) {
-      const data = audioBuffer.getChannelData(channel);
-      for (let i = 0; i < length; i++) mono[i] += data[i] / channels;
-    }
-
-    return mono;
-  },
-
-  encodeWav(samples, sampleRate) {
-    const bytesPerSample = 2;
-    const buffer = new ArrayBuffer(44 + samples.length * bytesPerSample);
-    const view = new DataView(buffer);
-
-    this.writeAscii(view, 0, 'RIFF');
-    view.setUint32(4, 36 + samples.length * bytesPerSample, true);
-    this.writeAscii(view, 8, 'WAVE');
-    this.writeAscii(view, 12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * bytesPerSample, true);
-    view.setUint16(32, bytesPerSample, true);
-    view.setUint16(34, 8 * bytesPerSample, true);
-    this.writeAscii(view, 36, 'data');
-    view.setUint32(40, samples.length * bytesPerSample, true);
-
-    let offset = 44;
-    for (let i = 0; i < samples.length; i++) {
-      const sample = Math.max(-1, Math.min(1, samples[i]));
-      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
-      offset += bytesPerSample;
-    }
-
-    return buffer;
-  },
-
-  writeAscii(view, offset, text) {
-    for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
-  },
-
-  arrayBufferToBase64(buffer) {
-    const bytes = new Uint8Array(buffer);
-    const chunkSize = 0x8000;
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-    }
-    return btoa(binary);
-  },
-
   async analyzeChordAudio(recording) {
     const result = document.getElementById('chord-analysis');
     const noteHints = [...new Set(this.detectedNotes.map(item => item.name))];
 
-    result.innerHTML = '<div class="chord-analysis-title">Analyzing chord...</div><div class="chord-analysis-meta">Running lv-chordia on the recorded audio.</div>';
+    result.innerHTML = '<div class="chord-analysis-title">Analyzing chord...</div><div class="chord-analysis-meta">Matching detected notes locally.</div>';
 
     try {
       const apiBase = typeof App !== 'undefined' ? App.baseUrl : `${location.origin}/api`;
@@ -951,110 +814,20 @@ const Battle = {
 
       const chord = data.chord || {};
       const chordName = chord.chord || 'unclear';
-      const isNoChord = this.isNoChordResult(chordName);
-      this.detectedChordResult = isNoChord ? null : chordName;
-      this.setDetectedChordDisplay(isNoChord ? '...' : chordName, { muted: isNoChord });
+      this.detectedChordResult = chordName;
+      this.setText('det-note', chordName);
       this.setText('det-label', 'Chord');
-      this.handleAiChordResult(chord, data);
-      result.classList.toggle('is-muted', isNoChord);
-      result.innerHTML = this.renderAiChordAnalysis(chord, data, isNoChord);
+      result.innerHTML = `
+        <div class="chord-analysis-title">${this.escapeHtml(chordName)} <span>${this.escapeHtml(String(chord.confidence || '--'))}%</span></div>
+        <div class="chord-analysis-meta">${this.escapeHtml(chord.feedback || 'Matched from detected notes.')}</div>
+        <div class="chord-analysis-meta">Notes: ${this.escapeHtml(Array.isArray(chord.notes) ? chord.notes.join(' - ') : chord.notes || 'unknown')}</div>
+        <div class="chord-analysis-meta">Tip: ${this.escapeHtml(chord.practiceTip || 'Strum slowly and let the chord ring.')}</div>
+        <div class="chord-analysis-meta">Source: ${this.escapeHtml(data.source)}</div>
+      `;
     } catch (err) {
       console.error('Audio chord analysis error:', err);
-      result.classList.add('is-muted');
       result.innerHTML = `<div class="chord-analysis-title">Chord analysis unavailable</div><div class="chord-analysis-meta">${this.escapeHtml(err.message)}</div>`;
     }
-  },
-
-  handleAiChordResult(chord, data) {
-    if (!this.targetChord || !chord) return;
-    if (data.source !== 'lv-chordia') {
-      this.matchHeld = 0;
-      this.setFeedback(`AI classifier unavailable; target ${this.targetChord.symbol} was not scored.`);
-      return;
-    }
-
-    const detected = this.normalizeChordForCompare(chord.chord || chord.rawChord);
-    const target = this.normalizeChordForCompare(this.targetChord.symbol);
-    const confidence = Number(chord.confidence || 0);
-    const detectedEl = document.getElementById('det-note');
-    const isMatch = detected && target && detected === target && confidence >= 35;
-
-    if (detectedEl) detectedEl.classList.toggle('matched', isMatch);
-
-    if (isMatch) {
-      this.setFeedback(`AI detected ${chord.chord} from ${data.source}. Target ${this.targetChord.symbol} matched.`);
-      this.registerHit(confidence >= 85);
-      return;
-    }
-
-    this.matchHeld = 0;
-    this.setFeedback(`AI detected ${chord.chord || 'unclear'}; target is ${this.targetChord.symbol}. Strum again when ready.`);
-  },
-
-  renderAiChordAnalysis(chord, data, isNoChord) {
-    const confidence = this.escapeHtml(String(chord.confidence || '--'));
-    const notes = Array.isArray(chord.notes) ? chord.notes.filter(Boolean) : [];
-    const title = isNoChord ? 'No stable chord yet' : this.escapeHtml(chord.chord || 'Unclear');
-    const feedback = isNoChord
-      ? 'Let the strings ring a little longer, then strum again.'
-      : this.escapeHtml(chord.feedback || 'AI matched the recorded chord.');
-    const notesLine = notes.length
-      ? `<div class="chord-analysis-meta">Notes: ${this.escapeHtml(notes.join(' - '))}</div>`
-      : '';
-
-    return `
-      <div class="chord-analysis-title">${title} <span>${confidence}%</span></div>
-      <div class="chord-analysis-meta">${feedback}</div>
-      ${notesLine}
-      <div class="chord-analysis-meta">Source: ${this.escapeHtml(data.source || 'lv-chordia')}</div>
-    `;
-  },
-
-  isNoChordResult(value) {
-    return /^(no chord|n|unclear)$/i.test(String(value || '').trim());
-  },
-
-  normalizeChordForCompare(symbol) {
-    const clean = String(symbol || '')
-      .trim()
-      .replace(/\u266f/g, '#')
-      .replace(/\u266d/g, 'b')
-      .replace(/\s+/g, '')
-      .replace(/major/i, '')
-      .replace(/minor/i, 'm');
-
-    if (!clean || /^no(chord)?$/i.test(clean) || clean === 'N') return '';
-
-    const match = clean.match(/^([A-Ga-g])([#b]?)(.*)$/);
-    if (!match) return '';
-
-    const rootPc = this.notePc(`${match[1].toUpperCase()}${match[2] || ''}`);
-    if (rootPc === null) return '';
-
-    return `${rootPc}:${this.chordQualityForCompare(match[3] || '')}`;
-  },
-
-  chordQualityForCompare(suffix) {
-    const clean = String(suffix || '')
-      .toLowerCase()
-      .replace(/^:/, '')
-      .replace(/^maj$/, '')
-      .replace(/^min/, 'm');
-
-    if (!clean || clean === 'major') return 'maj';
-    if (clean.startsWith('m') && !clean.startsWith('maj')) {
-      if (clean.includes('7')) return 'm7';
-      if (clean.includes('6')) return 'm6';
-      return 'm';
-    }
-    if (clean.includes('maj7')) return 'maj7';
-    if (clean.includes('dim')) return 'dim';
-    if (clean.includes('aug') || clean.includes('+')) return 'aug';
-    if (clean.includes('sus2')) return 'sus2';
-    if (clean.includes('sus4') || clean.includes('sus')) return 'sus4';
-    if (clean.includes('7')) return '7';
-    if (clean.includes('6')) return '6';
-    return 'maj';
   },
 
   async analyzeChord() {
@@ -1150,15 +923,6 @@ const Battle = {
   setText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
-  },
-
-  setDetectedChordDisplay(value, options = {}) {
-    const el = document.getElementById('det-note');
-    if (!el) return;
-
-    el.textContent = value;
-    el.classList.toggle('muted', !!options.muted);
-    el.classList.toggle('matched', !!options.matched);
   },
 
   async readJsonResponse(response) {
