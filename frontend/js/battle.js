@@ -835,12 +835,12 @@ const Battle = {
       recorder.onerror = event => reject(event.error || new Error('MediaRecorder error'));
       recorder.onstop = async () => {
         const blob = new Blob(chunks, { type: mimeType });
-        const audioBase64 = await this.blobToBase64(blob);
         try {
           const wav = await this.blobToWavBase64(blob);
-          resolve({ ...wav, audioBase64, originalMimeType: mimeType });
+          resolve({ ...wav, originalMimeType: mimeType });
         } catch (err) {
           console.warn('WAV conversion failed, sending original recording:', err);
+          const audioBase64 = await this.blobToBase64(blob);
           resolve({ audioBase64, mimeType });
         }
       };
@@ -1166,7 +1166,7 @@ const Battle = {
     try {
       return JSON.parse(text);
     } catch {
-      throw new Error(`Expected JSON, got ${text.slice(0, 80) || response.statusText}`);
+      throw new Error(`Server returned ${response.status || 'a non-JSON response'}: ${response.statusText || text.slice(0, 80) || 'Unexpected response'}`);
     }
   },
 

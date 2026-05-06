@@ -360,7 +360,7 @@ App.readJsonResponse = async function readJsonResponse(response) {
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`Expected JSON, got ${text.slice(0, 80) || response.statusText}`);
+    throw new Error(`Server returned ${response.status || 'a non-JSON response'}: ${response.statusText || text.slice(0, 80) || 'Unexpected response'}`);
   }
 };
 
