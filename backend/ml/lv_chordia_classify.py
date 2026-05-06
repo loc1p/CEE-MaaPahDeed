@@ -11,22 +11,32 @@ import time
 import warnings
 from pathlib import Path
 
-import numpy as np
-import torch
-
 warnings.filterwarnings(
     "ignore",
     message="Couldn't find ffmpeg or avconv.*",
     category=RuntimeWarning,
 )
 
-from lv_chordia.chord_recognition import MODEL_NAMES
-from lv_chordia.chordnet_ismir_naive import ChordNet
-from lv_chordia.extractors.cqt import CQTV2
-from lv_chordia.extractors.xhmm_ismir import XHMMDecoder
-from lv_chordia.mir import DataEntry, io
-from lv_chordia.mir.nn.train import NetworkInterface
-from lv_chordia.settings import DEFAULT_HOP_LENGTH, DEFAULT_SR
+SETUP_HINT = (
+    "lv-chordia is not installed for this Python interpreter. "
+    "From the backend directory, run `npm run setup:ai`, then restart the backend server. "
+    "You can also set LV_CHORDIA_PYTHON to the Python executable that has lv-chordia installed."
+)
+
+try:
+    import numpy as np
+    import torch
+
+    from lv_chordia.chord_recognition import MODEL_NAMES
+    from lv_chordia.chordnet_ismir_naive import ChordNet
+    from lv_chordia.extractors.cqt import CQTV2
+    from lv_chordia.extractors.xhmm_ismir import XHMMDecoder
+    from lv_chordia.mir import DataEntry, io
+    from lv_chordia.mir.nn.train import NetworkInterface
+    from lv_chordia.settings import DEFAULT_HOP_LENGTH, DEFAULT_SR
+except ModuleNotFoundError as error:
+    missing_package = error.name or "a required package"
+    raise SystemExit(f"{SETUP_HINT} Missing module: {missing_package}") from None
 
 
 class LvChordiaRecognizer:

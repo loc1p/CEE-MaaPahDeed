@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "setup:ai": "powershell -ExecutionPolicy Bypass -File ./setup-lv-chordia.ps1"
+    "setup:ai": "node ./setup-lv-chordia.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

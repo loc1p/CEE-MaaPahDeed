@@ -4,3 +4,7 @@ backend/.env
 backend/*.log
 backend/.venv-lvchordia/
 .venv-lvchordia/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

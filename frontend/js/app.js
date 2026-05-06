@@ -1,5 +1,9 @@
 const App = {
-  baseUrl: location.protocol === 'file:' ? 'http://localhost:5001/api' : `${location.origin}/api`,
+  baseUrl: location.protocol === 'file:'
+    ? 'http://localhost:5001/api'
+    : location.hostname.endsWith('.web.app') || location.hostname.endsWith('.firebaseapp.com')
+      ? 'https://maapahdeed.onrender.com/api'
+      : `${location.origin}/api`,
   user: null,
   token: localStorage.getItem('maapah_token'),
   cachedUser: JSON.parse(localStorage.getItem('maapah_user') || 'null'),

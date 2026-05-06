@@ -103,9 +103,9 @@ npm install
 
 Battle mode uses the local `backend/ml/lv_chordia_classify.py` helper with the `lv-chordia` Python package. The setup script creates `backend/.venv-lvchordia` inside this project, so the server does not depend on another folder on your machine.
 
-On Windows PowerShell:
+On macOS, Linux, or Windows:
 
-```powershell
+```bash
 npm run setup:ai
 ```
 
@@ -171,6 +171,77 @@ http://localhost:5001
 The backend serves the frontend from the `frontend/` folder. Camera and microphone features work best on `localhost` or HTTPS.
 
 ## Public Deployment
+
+### Firebase Hosting + Cloud Run
+
+This repo can deploy the frontend with Firebase Hosting and route `/api/**` to the Express backend on Cloud Run.
+
+The included `firebase.json` expects a Cloud Run service named:
+
+```text
+maapah-api
+```
+
+in this region:
+
+```text
+asia-southeast1
+```
+
+Deployment steps:
+
+1. Install and sign in to the CLIs:
+
+```bash
+npm install -g firebase-tools
+firebase login
+gcloud auth login
+gcloud config set project YOUR_FIREBASE_PROJECT_ID
+```
+
+2. Enable required Google Cloud services:
+
+```bash
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com
+```
+
+3. Create production secrets:
+
+```bash
+printf "YOUR_MONGODB_ATLAS_URI" | gcloud secrets create MONGO_URI --data-file=-
+printf "YOUR_RANDOM_JWT_SECRET" | gcloud secrets create JWT_SECRET --data-file=-
+```
+
+4. Deploy the backend to Cloud Run from the repo root:
+
+```bash
+gcloud run deploy maapah-api \
+  --source . \
+  --region asia-southeast1 \
+  --allow-unauthenticated \
+  --memory 2Gi \
+  --timeout 300 \
+  --set-env-vars NODE_ENV=production,LV_CHORDIA_CHORD_DICT=submission \
+  --set-secrets MONGO_URI=MONGO_URI:latest,JWT_SECRET=JWT_SECRET:latest
+```
+
+For a quick class/demo deployment, you can replace `--set-secrets ...` with `--set-env-vars MONGO_URI=...,JWT_SECRET=...`.
+
+5. Deploy Firebase Hosting:
+
+```bash
+firebase deploy --only hosting --project YOUR_FIREBASE_PROJECT_ID
+```
+
+6. Verify:
+
+```text
+https://YOUR_FIREBASE_PROJECT_ID.web.app/api/health
+```
+
+If you change the Cloud Run service name or region, update `firebase.json` to match.
+
+### Render
 
 This repo includes `render.yaml` for deploying one public Render web service. The Express backend serves both the API and the static frontend.
 
