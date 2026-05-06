@@ -2,5 +2,3 @@ node_modules/
 .DS_Store
 backend/.env
 backend/*.log
-backend/.venv-lvchordia/
-.venv-lvchordia/
