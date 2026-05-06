@@ -3,7 +3,7 @@ services:
     name: maapahdeed
     runtime: node
     plan: free
-    buildCommand: npm --prefix backend install
+    buildCommand: npm --prefix backend install && npm --prefix backend run setup:ai
     startCommand: npm --prefix backend start
     healthCheckPath: /api/health
     envVars:
