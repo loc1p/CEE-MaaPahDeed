@@ -23,7 +23,7 @@ MaaPahDeed is a guitar learning web application built as a Computer Engineering 
 | --- | --- |
 | User Login | Users can register an account, log in, stay signed in across refreshes, and log out. Passwords are hashed in the backend. |
 | API Integration | The backend calls external music/chord APIs, including E-Chords/MusicBrainz-style song metadata lookup, All Guitar Chords guitar-shape lookup, and chord analysis endpoints. API responses are used directly in Battle, the fretboard guide, and Song Chord Quest. |
-| Deployed & Live | Add the public deployment URL after deployment. The app is designed to run as one public Render web service where Express serves both the API and static frontend. |
+| Deployed & Live | The frontend is deployed on Firebase Hosting and opens from a public HTTPS URL. The production frontend calls the Render backend API for login, saved songs, dashboard data, chord lookup, and health checks. |
 
 ### Challenging Requirements
 
@@ -46,7 +46,7 @@ The challenging requirement score is capped at 20 points, so one Tier S feature 
 - Database: MongoDB with Mongoose
 - Authentication: JWT, bcryptjs
 - APIs / Libraries: E-Chords style song chord lookup, All Guitar Chords shape lookup, MusicBrainz/Cover Art metadata lookup, Chords API fallback, lv-chordia, MediaPipe Hands, MediaPipe Face Mesh, Web Audio API, Pitchy
-- Deployment target: Render web service with MongoDB Atlas
+- Deployment: Firebase Hosting for the frontend, Render web service for the backend API, and MongoDB Atlas for the database
 
 ## Project Structure
 
@@ -149,22 +149,31 @@ The backend serves the frontend from the `frontend/` folder. Camera and micropho
 
 ## Public Deployment
 
-This repo includes `render.yaml` for deploying one public Render web service. The Express backend serves both the API and the static frontend.
+The public demo uses Firebase Hosting for the static frontend and Render for the Express backend API. Firebase serves the files in `frontend/`; when opened from a Firebase domain, the frontend uses the Render API base URL configured in `frontend/js/app.js`.
 
 ```text
-Live URL: https://maapahdeed.onrender.com/
+Live URL: https://project-5101d58b-03f9-4d7e-a71.web.app/
 Backend URL: https://maapahdeed.onrender.com/api
 Health Check: https://maapahdeed.onrender.com/api/health
 ```
 
-Deployment steps:
+Frontend deployment steps:
 
-1. Push this repository to GitHub.
-2. Create a MongoDB Atlas database and copy its connection string.
-3. In Render, create a new Blueprint from this repo. Render reads `render.yaml`.
-4. Add required environment variables in Render:
+1. Pull the latest code from GitHub.
+2. Confirm `.firebaserc` points to project `project-5101d58b-03f9-4d7e-a71`.
+3. Deploy the latest `frontend/` files:
+
+```bash
+firebase deploy --only hosting
+```
+
+Backend deployment steps:
+
+1. Create a MongoDB Atlas database and copy its connection string.
+2. In Render, create a new Blueprint from this repo. Render reads `render.yaml`.
+3. Add required environment variables in Render:
    - `MONGO_URI`
-5. Deploy, then open `/api/health` on the public URL to verify the backend.
+4. Deploy, then open `/api/health` on the public URL to verify the backend.
 
 ## Useful API Routes
 
@@ -198,13 +207,14 @@ Deployment steps:
 
 Recommended deployment:
 
-- Frontend and backend together: Render Blueprint using `render.yaml`
+- Frontend: Firebase Hosting using `firebase.json`
+- Backend: Render Blueprint using `render.yaml`
 - Database: MongoDB Atlas
 - Environment variables: set `MONGO_URI` in the Render dashboard
 
-After deployment, update this section:
+Current public links:
 
-- Live URL: https://maapahdeed.onrender.com/
+- Live URL: https://project-5101d58b-03f9-4d7e-a71.web.app/
 - Backend URL: https://maapahdeed.onrender.com/api
 - GitHub URL: https://github.com/loc1p/CEE-MaaPahDeed
 
@@ -239,6 +249,6 @@ Use this checklist for the final video:
 ## Links
 
 - GitHub: https://github.com/loc1p/CEE-MaaPahDeed
-- Live URL: https://maapahdeed.onrender.com/
+- Live URL: https://project-5101d58b-03f9-4d7e-a71.web.app/
 - Backend URL: https://maapahdeed.onrender.com/api
 - Video URL: TODO

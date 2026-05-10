@@ -42,7 +42,7 @@ The challenging requirement score is capped at 20 points, so Tier S is enough to
 
 ## Live URL
 
-https://maapahdeed.onrender.com/
+https://project-5101d58b-03f9-4d7e-a71.web.app/
 
 ## Backend URL
 
@@ -59,7 +59,7 @@ https://github.com/loc1p/CEE-MaaPahDeed
 - Database: MongoDB, Mongoose
 - Authentication: JWT, bcryptjs
 - APIs / Libraries: external song/chord lookup, All Guitar Chords shape lookup, MusicBrainz/Cover Art metadata, Chords API fallback, lv-chordia, MediaPipe Hands, MediaPipe Face Mesh, Web Audio API, Pitchy
-- Deployment: Render web service using `render.yaml`, with MongoDB Atlas for the database
+- Deployment: Firebase Hosting for the frontend, Render web service for the backend API, and MongoDB Atlas for the database
 
 ## Team Members
 
