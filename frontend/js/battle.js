@@ -37,6 +37,13 @@ const Battle = {
     Dm: [{ string: 3, fret: 2, finger: '2' }, { string: 4, fret: 3, finger: '3' }, { string: 5, fret: 1, finger: '1' }],
     F: [{ string: 0, fret: 1, finger: '1' }, { string: 1, fret: 3, finger: '3' }, { string: 2, fret: 3, finger: '4' }, { string: 3, fret: 2, finger: '2' }, { string: 4, fret: 1, finger: '1' }, { string: 5, fret: 1, finger: '1' }]
   },
+  chordMutedStrings: {
+    C: [0],
+    D: [0, 1],
+    A: [0],
+    Am: [0],
+    Dm: [0, 1]
+  },
   monsters: [
     { name: 'Dissonant Wraith', icon: 'Eye', lore: 'A creature woven from unresolved tension.', hp: 5 },
     { name: 'Chromatic Specter', icon: 'Moon', lore: 'It shifts between half-steps, never at rest.', hp: 6 },
@@ -224,11 +231,14 @@ const Battle = {
     const localPositions = this.targetChord ? this.getLocalChordPositions(this.targetChord.symbol) : [];
     const chordShape = this.targetChord && !localPositions.length ? this.getExternalChordShape(this.targetChord.symbol) : null;
     const variation = chordShape && chordShape.variations && chordShape.variations[0];
+    const externalPositions = variation && variation.positions && variation.positions.length
+      ? this.withMutedPositions(variation.positions, variation.mutedStrings)
+      : [];
     const positions = this.targetChord
-      ? (localPositions.length ? localPositions : variation && variation.positions && variation.positions.length ? variation.positions : this.getChordPositions(this.targetChord.symbol))
+      ? (localPositions.length ? localPositions : externalPositions.length ? externalPositions : this.getChordPositions(this.targetChord.symbol))
       : this.notePositions[`${this.target.name}${this.target.octave}`] || [];
     const positionText = positions.length
-      ? positions.map(pos => {
+      ? positions.filter(pos => !pos.muted).map(pos => {
         const stringInfo = this.guitarStrings[pos.string];
         const fretText = pos.fret === 0 ? 'open' : `fret ${pos.fret}`;
         return `${stringInfo.label} string: ${fretText}`;
@@ -268,9 +278,18 @@ const Battle = {
 
   getLocalChordPositions(symbol) {
     const clean = this.normalizeChordSymbol(symbol);
-    return this.chordShapes[clean]
-      || this.chordShapes[clean.replace(/[0-9]/g, '')]
-      || [];
+    const positions = this.chordShapes[clean] || [];
+    return positions.length ? this.withMutedPositions(positions, this.chordMutedStrings[clean]) : [];
+  },
+
+  withMutedPositions(positions, mutedStrings = []) {
+    const muted = Array.isArray(mutedStrings) ? mutedStrings : [];
+    return [
+      ...positions,
+      ...muted
+        .filter(string => Number.isInteger(Number(string)))
+        .map(string => ({ string: Number(string), muted: true }))
+    ];
   },
 
   getExternalChordShape(symbol) {
@@ -311,15 +330,16 @@ const Battle = {
       .replace(/\u266d/g, 'b')
       .replace(/minor/i, 'm')
       .replace(/major/i, '')
-      .replace(/^([A-G])B/, '$1b')
+      .replace(/^([A-Ga-g])B/, '$1b')
       .trim();
   },
 
   formatChordSymbol(symbol) {
     const clean = this.normalizeChordSymbol(symbol);
-    return clean.replace(/^([A-Ga-g])([#b]?)(.*)$/, (_, root, accidental, suffix) => (
-      `${root.toUpperCase()}${accidental === 'B' ? 'b' : accidental}${suffix}`
-    ));
+    return clean.replace(/^([A-Ga-g])([#b]?)(.*)$/, (_, root, accidental, suffix) => {
+      const fixedSuffix = suffix.replace(/^M(?!aj)/, 'm');
+      return `${root.toUpperCase()}${accidental === 'B' ? 'b' : accidental}${fixedSuffix}`;
+    });
   },
 
   buildMovableChordShape(symbol) {
@@ -414,6 +434,7 @@ const Battle = {
 
   renderGuideString(stringInfo, stringIndex, positions, frets) {
     const openMarker = positions.find(pos => pos.string === stringIndex && pos.fret === 0);
+    const mutedMarker = positions.find(pos => pos.string === stringIndex && pos.muted);
 
     return `
       <div class="guitar-string-row">
@@ -421,6 +442,7 @@ const Battle = {
         ${frets.map(fret => {
           const marker = positions.find(pos => pos.string === stringIndex && pos.fret === fret);
           return `<div class="guitar-fret-cell">
+            ${mutedMarker && fret === frets[0] ? '<span class="guitar-muted-dot"></span>' : ''}
             ${marker ? `<span class="guitar-finger">${this.escapeHtml(marker.finger)}</span>` : ''}
           </div>`;
         }).join('')}
@@ -574,7 +596,7 @@ const Battle = {
 
     const played = [...new Set(this.recentPlayedNotes.map(item => item.name))];
     const chordGuess = this.guessChordFromNotes(played);
-    this.setText('det-note', this.detectedChordResult || (chordGuess ? chordGuess.symbol : '-'));
+    this.setText('det-note', this.detectedChordResult || (chordGuess ? this.formatChordSymbol(chordGuess.symbol) : '-'));
     this.setText('det-label', 'Chord');
 
     const matched = targetNotes.filter(target => played.includes(target));
@@ -798,12 +820,12 @@ const Battle = {
       }
 
       const best = data.matches[0];
-      this.detectedChordResult = best.name;
-      this.setText('det-note', best.name);
+      this.detectedChordResult = this.formatChordSymbol(best.name);
+      this.setText('det-note', this.detectedChordResult);
       this.setText('det-label', 'Chord');
       const image = best.image ? `<img class="chord-analysis-img" src="${best.image}" alt="${this.escapeHtml(best.name)} chord diagram">` : '';
       result.innerHTML = `
-        <div class="chord-analysis-title">${this.escapeHtml(best.name)} <span>${this.escapeHtml(String(best.confidence))}%</span></div>
+        <div class="chord-analysis-title">${this.escapeHtml(this.formatChordSymbol(best.name))} <span>${this.escapeHtml(String(best.confidence))}%</span></div>
         <div class="chord-analysis-meta">Detected: ${this.escapeHtml(data.inputNotes.join(' - '))}</div>
         <div class="chord-analysis-meta">Chord tones: ${this.escapeHtml(best.notes.join(' - '))}</div>
         <div class="chord-analysis-meta">Source: ${this.escapeHtml(data.source)}</div>

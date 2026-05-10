@@ -634,6 +634,22 @@ body.theme-light .guitar-guide-meta {
   box-shadow: 0 0 14px rgba(57,255,20,.65);
 }
 
+.guitar-muted-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 23px;
+  height: 23px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 92, 126, .9);
+  background: var(--red);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 14px rgba(255, 48, 88, .55);
+}
+
 
 .cents-bar-o {
   position: relative;

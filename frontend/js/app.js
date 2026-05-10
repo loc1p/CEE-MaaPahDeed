@@ -165,9 +165,10 @@ const App = {
       .replace(/\u266f/g, '#')
       .replace(/\u266d/g, 'b')
       .replace(/^([A-Ga-g])B/, '$1b')
-      .replace(/^([A-Ga-g])([#b]?)(.*)$/, (_, root, accidental, suffix) => (
-        `${root.toUpperCase()}${accidental}${suffix}`
-      ));
+      .replace(/^([A-Ga-g])([#b]?)(.*)$/, (_, root, accidental, suffix) => {
+        const fixedSuffix = suffix.replace(/^M(?!aj)/, 'm');
+        return `${root.toUpperCase()}${accidental === 'B' ? 'b' : accidental}${fixedSuffix}`;
+      });
   },
 
   async searchMusic() {
