@@ -358,6 +358,27 @@ function parseFingerInstruction(text) {
   return string === null ? [] : [{ string, fret, finger }];
 }
 
+function mutedStringsFromInstructions(instructions) {
+  const muted = new Set();
+  for (const instruction of instructions) {
+    const text = String(instruction || '');
+    const startMatch = text.match(/strum\s+(?:all\s+the\s+strings\s+)?starting\s+from\s+(?:the\s+)?(\d)(?:st|nd|rd|th)\s+string/i);
+    if (startMatch) {
+      const startString = Number(startMatch[1]);
+      for (let string = startString + 1; string <= 6; string += 1) {
+        const index = guitarStringIndex(string);
+        if (index !== null) muted.add(index);
+      }
+    }
+
+    for (const muteMatch of text.matchAll(/(?:do not|don't|avoid|mute|skip)[^.;]*?(\d)(?:st|nd|rd|th)\s+strings?/gi)) {
+      const index = guitarStringIndex(muteMatch[1]);
+      if (index !== null) muted.add(index);
+    }
+  }
+  return [...muted].sort((a, b) => a - b);
+}
+
 function parseAllGuitarChordPage(html, symbol, url) {
   const notesMatch = String(html).match(/Notes:\s*<\/?[^>]*>\s*([^<\n]+)/i)
     || htmlText(html).match(/Notes:\s*([A-G][A-G#b\-\s]*)/i);
@@ -375,10 +396,12 @@ function parseAllGuitarChordPage(html, symbol, url) {
       .map(item => htmlText(item[1]))
       .filter(Boolean);
     const positions = instructions.flatMap(parseFingerInstruction);
+    const mutedStrings = mutedStringsFromInstructions(instructions);
     const imageMatch = body.match(/<img[^>]+src=(["'])(.*?)\1/i);
     variations.push({
       number,
       positions,
+      mutedStrings,
       instructions,
       image: imageMatch ? new URL(imageMatch[2], ALL_GUITAR_CHORDS_BASE).href : null
     });
