@@ -245,7 +245,7 @@ const Battle = {
       }).join(' | ')
       : 'No shape saved for this target yet.';
     const sourceText = chordShape
-      ? `Source: ${chordShape.source}`
+      ? `Source: ${this.escapeSourceName(chordShape.source, 'All Guitar Chords')}`
       : localPositions.length
         ? 'Source: Local chord shape'
         : this.targetChord
@@ -295,6 +295,11 @@ const Battle = {
   getExternalChordShape(symbol) {
     const shape = this.externalChordShapes[this.normalizeChordSymbol(symbol)];
     return shape && !shape.failed ? shape : null;
+  },
+
+  escapeSourceName(source, fallback) {
+    const value = String(source || '').trim();
+    return value && value !== 'undefined' ? value : fallback;
   },
 
   async loadExternalChordShape(symbol) {
@@ -835,7 +840,7 @@ const Battle = {
         <div class="chord-analysis-title">${this.escapeHtml(this.formatChordSymbol(best.name))} <span>${this.escapeHtml(String(best.confidence))}%</span></div>
         <div class="chord-analysis-meta">Detected: ${this.escapeHtml(data.inputNotes.join(' - '))}</div>
         <div class="chord-analysis-meta">Chord tones: ${this.escapeHtml(best.notes.join(' - '))}</div>
-        <div class="chord-analysis-meta">Source: ${this.escapeHtml(data.source)}</div>
+        <div class="chord-analysis-meta">Source: ${this.escapeHtml(this.escapeSourceName(data.source, 'Local chord analysis'))}</div>
         ${image}
       `;
     } catch (err) {
