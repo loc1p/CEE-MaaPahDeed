@@ -22,7 +22,7 @@ Users can create their own account, search for a real song, load its chords into
 - Light/Dark theme toggle with saved preference
 - Backend API with MongoDB persistence
 - Environment-variable based secret management using `.env`
-- Correct chord display formatting for mixed-case chord input such as `DM` -> `Dm` and `BB` -> `Bb`
+- Correct chord display formatting for mixed-case chord input such as `DM` -> `Dm`, `BB` -> `Bb`, and `BMAJ7` -> `Bmaj7`
 
 ## Optional Tier Chosen
 

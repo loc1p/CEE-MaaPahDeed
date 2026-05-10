@@ -331,12 +331,18 @@ const Battle = {
       .trim();
     return clean.replace(/^([A-Ga-g])([#bB]?)(.*)$/, (_, root, accidental, suffix) => {
       const fixedAccidental = accidental === '#' ? '#' : accidental ? 'b' : '';
-      const fixedSuffix = suffix
-        .replace(/minor/ig, 'm')
-        .replace(/major/ig, '')
-        .replace(/^M(?!aj)/, 'm');
+      const fixedSuffix = this.normalizeChordSuffix(suffix);
       return `${root.toUpperCase()}${fixedAccidental}${fixedSuffix}`;
     });
+  },
+
+  normalizeChordSuffix(suffix) {
+    return String(suffix || '')
+      .replace(/minor/ig, 'm')
+      .replace(/major/ig, 'maj')
+      .replace(/[A-Za-z]+/g, part => part.toLowerCase())
+      .replace(/^min/, 'm')
+      .replace(/\/([a-g])([#b]?)/g, (_, root, accidental) => `/${root.toUpperCase()}${accidental}`);
   },
 
   formatChordSymbol(symbol) {

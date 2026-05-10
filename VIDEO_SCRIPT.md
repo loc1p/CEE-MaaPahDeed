@@ -43,7 +43,7 @@ Requirement ต่อมาคือ API Integration แอปนี้เชื
 
 ส่วน Song Chord Quest ใช้ backend ไปดึงคอร์ดเพลงจาก external song/chord source แล้วนำคอร์ดที่ได้มาใช้เป็น target ใน Battle mode ส่วน guitar fretboard guide จะใช้ chord shape ในเครื่องก่อน ถ้าไม่มีคอร์ดนั้นใน local shape list backend จะ fetch ตำแหน่งนิ้วจาก All Guitar Chords ผ่าน endpoint `/api/chords/shape`
 
-แอปยังจัดรูปแบบชื่อคอร์ดให้ถูกต้อง เช่น `DM` แสดงเป็น `Dm` และ `BB` แสดงเป็น `Bb`
+แอปยังจัดรูปแบบชื่อคอร์ดให้ถูกต้อง เช่น `DM` แสดงเป็น `Dm`, `BB` แสดงเป็น `Bb` และคอร์ดที่มีตัวอักษรหลายตัวอย่าง `BMAJ7` แสดงเป็น `Bmaj7`
 
 โชว์:
 
@@ -55,7 +55,7 @@ Requirement ต่อมาคือ API Integration แอปนี้เชื
 3. กด Load Chords
 4. โชว์ chord list และ source
 5. ชี้ให้เห็นว่าคอร์ดที่โหลดมาถูกนำไปใช้เป็น target ใน Battle
-6. โชว์ชื่อคอร์ด เช่น `Dm` และ `Bb` ว่าแสดงตัวพิมพ์ใหญ่/เล็กถูกต้อง
+6. โชว์ชื่อคอร์ด เช่น `Dm`, `Bb` และ `Bmaj7` ว่าแสดงตัวพิมพ์ใหญ่/เล็กถูกต้อง
 7. ชี้ fretboard guide ว่า common chord ใช้ local shape และคอร์ดที่ไม่มีใน local จะโหลด shape จาก All Guitar Chords
 8. ชี้ตำแหน่งนิ้วบน fretboard, สายเปิด และวงสีแดง/X ที่บอกว่าสายนั้นต้อง mute
 

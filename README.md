@@ -13,7 +13,7 @@ MaaPahDeed is a guitar learning web application built as a Computer Engineering 
 - Song Library Dashboard with recent songs, saved songs, and top searched songs
 - Light/Dark theme toggle with saved user preference
 - External API integration for song/chord lookup, guitar chord shapes, and music metadata
-- Chord readout that shows the latest successfully hit chord, including normalized chord names such as `Dm` and `Bb`
+- Chord readout that shows the latest successfully hit chord, including normalized chord names such as `Dm`, `Bb`, and `Bmaj7`
 
 ## Final Project Requirement Mapping
 
@@ -233,7 +233,7 @@ Use this checklist for the final video:
 - Play Battle mode and show the fretboard chord guide
 - Point out the fretboard finger dots, open-string marks, and red muted-string circles/X marks
 - Show that uncommon chords can load guitar positions from All Guitar Chords, while common local shapes still load instantly
-- Show chord names such as `Dm` and `Bb` displaying with the correct letter case
+- Show chord names such as `Dm`, `Bb`, and `Bmaj7` displaying with the correct letter case
 - Hit a target chord and show the latest hit chord in the Chord readout
 - Open Chord Cam and show camera-based interaction
 - Save a song

@@ -209,11 +209,17 @@ function normalizeChordSymbol(symbol) {
 
   const root = match[1].toUpperCase();
   const accidental = match[2] === '#' ? '#' : match[2] ? 'b' : '';
-  const suffix = match[3]
-    .replace(/minor/ig, 'm')
-    .replace(/major/ig, '')
-    .replace(/^M(?!aj)/, 'm');
+  const suffix = normalizeChordSuffix(match[3]);
   return `${root}${accidental}${suffix}`;
+}
+
+function normalizeChordSuffix(suffix) {
+  return String(suffix || '')
+    .replace(/minor/ig, 'm')
+    .replace(/major/ig, 'maj')
+    .replace(/[A-Za-z]+/g, part => part.toLowerCase())
+    .replace(/^min/, 'm')
+    .replace(/\/([a-g])([#b]?)/g, (_, root, accidental) => `/${root.toUpperCase()}${accidental}`);
 }
 
 function chordSymbolToNotes(symbol) {
