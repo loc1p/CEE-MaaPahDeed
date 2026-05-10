@@ -14,7 +14,7 @@ Users can create their own account, search for a real song, load its chords into
 
 - User registration, login, session restore, and logout
 - Guitar Battle mode with chord targets and local chord hit detection
-- Fretboard guide showing chord finger positions from local shapes and All Guitar Chords fallback lookup
+- Fretboard guide showing chord finger positions, open strings, and red muted-string markers from local shapes and All Guitar Chords fallback lookup
 - Song Chord Quest using external song/chord API data
 - Chord Cam using camera-based hand/gesture tracking
 - Saved Songs library with create, read, update, and delete functionality
@@ -22,7 +22,7 @@ Users can create their own account, search for a real song, load its chords into
 - Light/Dark theme toggle with saved preference
 - Backend API with MongoDB persistence
 - Environment-variable based secret management using `.env`
-- Correct chord display formatting for flat chords such as `Bb`
+- Correct chord display formatting for mixed-case chord input such as `DM` -> `Dm` and `BB` -> `Bb`
 
 ## Optional Tier Chosen
 
@@ -51,6 +51,10 @@ https://maapahdeed.onrender.com/api
 ## GitHub URL
 
 https://github.com/loc1p/CEE-MaaPahDeed
+
+## Deployment Status
+
+Firebase Hosting is updated from the current `main` codebase and serves the frontend from the `frontend/` folder. The live frontend calls the Render backend API at the backend URL above.
 
 ## Tech Stack
 

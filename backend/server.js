@@ -197,14 +197,23 @@ async function recordSongSearch(result, userId = null) {
 }
 
 function normalizeChordSymbol(symbol) {
-  return String(symbol || '')
+  const clean = String(symbol || '')
     .replace(/\s+/g, '')
     .replace(/♯/g, '#')
     .replace(/♭/g, 'b')
     .replace(/\u266f/g, '#')
     .replace(/\u266d/g, 'b')
-    .replace(/^([A-Ga-g])B/, '$1b')
     .trim();
+  const match = clean.match(/^([A-Ga-g])([#bB]?)(.*)$/);
+  if (!match) return clean;
+
+  const root = match[1].toUpperCase();
+  const accidental = match[2] === '#' ? '#' : match[2] ? 'b' : '';
+  const suffix = match[3]
+    .replace(/minor/ig, 'm')
+    .replace(/major/ig, '')
+    .replace(/^M(?!aj)/, 'm');
+  return `${root}${accidental}${suffix}`;
 }
 
 function chordSymbolToNotes(symbol) {

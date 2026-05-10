@@ -6,14 +6,14 @@ MaaPahDeed is a guitar learning web application built as a Computer Engineering 
 
 - User registration, login, session restore, and logout
 - Battle mode for guitar chord practice with local microphone-based chord hit detection
-- Guitar fretboard guide that shows chord finger positions, using local shapes first and All Guitar Chords when a shape is missing
+- Guitar fretboard guide that shows chord finger positions, open strings, and red muted-string markers, using local shapes first and All Guitar Chords when a shape is missing
 - Song Chord Quest that loads chords for real songs
 - Chord Cam using camera-based hand/gesture tracking
 - Saved Songs library with create, read, update, and delete behavior
 - Song Library Dashboard with recent songs, saved songs, and top searched songs
 - Light/Dark theme toggle with saved user preference
 - External API integration for song/chord lookup, guitar chord shapes, and music metadata
-- Chord readout that shows the latest successfully hit chord, including flat chord names such as `Bb`
+- Chord readout that shows the latest successfully hit chord, including normalized chord names such as `Dm` and `Bb`
 
 ## Final Project Requirement Mapping
 
@@ -149,7 +149,7 @@ The backend serves the frontend from the `frontend/` folder. Camera and micropho
 
 ## Public Deployment
 
-The public demo uses Firebase Hosting for the static frontend and Render for the Express backend API. Firebase serves the files in `frontend/`; when opened from a Firebase domain, the frontend uses the Render API base URL configured in `frontend/js/app.js`.
+The public demo uses Firebase Hosting for the static frontend and Render for the Express backend API. Firebase serves the files in `frontend/`; when opened from a Firebase domain, the frontend uses the Render API base URL configured in `frontend/js/app.js`. The Firebase target is the default project in `.firebaserc`: `project-5101d58b-03f9-4d7e-a71`.
 
 ```text
 Live URL: https://project-5101d58b-03f9-4d7e-a71.web.app/
@@ -218,6 +218,8 @@ Current public links:
 - Backend URL: https://maapahdeed.onrender.com/api
 - GitHub URL: https://github.com/loc1p/CEE-MaaPahDeed
 
+Deployment status: Firebase Hosting has been updated from the current `main` codebase.
+
 ## Demo Checklist
 
 Use this checklist for the final video:
@@ -229,8 +231,9 @@ Use this checklist for the final video:
 - Search for a real song in Song Chord Quest
 - Show the external API result being used as Battle chord targets
 - Play Battle mode and show the fretboard chord guide
+- Point out the fretboard finger dots, open-string marks, and red muted-string circles/X marks
 - Show that uncommon chords can load guitar positions from All Guitar Chords, while common local shapes still load instantly
-- Show a flat chord such as `Bb` displaying correctly
+- Show chord names such as `Dm` and `Bb` displaying with the correct letter case
 - Hit a target chord and show the latest hit chord in the Chord readout
 - Open Chord Cam and show camera-based interaction
 - Save a song

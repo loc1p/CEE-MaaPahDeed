@@ -324,22 +324,23 @@ const Battle = {
   },
 
   normalizeChordSymbol(symbol) {
-    return String(symbol || '')
+    const clean = String(symbol || '')
       .replace(/\s+/g, '')
       .replace(/\u266f/g, '#')
       .replace(/\u266d/g, 'b')
-      .replace(/minor/i, 'm')
-      .replace(/major/i, '')
-      .replace(/^([A-Ga-g])B/, '$1b')
       .trim();
+    return clean.replace(/^([A-Ga-g])([#bB]?)(.*)$/, (_, root, accidental, suffix) => {
+      const fixedAccidental = accidental === '#' ? '#' : accidental ? 'b' : '';
+      const fixedSuffix = suffix
+        .replace(/minor/ig, 'm')
+        .replace(/major/ig, '')
+        .replace(/^M(?!aj)/, 'm');
+      return `${root.toUpperCase()}${fixedAccidental}${fixedSuffix}`;
+    });
   },
 
   formatChordSymbol(symbol) {
-    const clean = this.normalizeChordSymbol(symbol);
-    return clean.replace(/^([A-Ga-g])([#b]?)(.*)$/, (_, root, accidental, suffix) => {
-      const fixedSuffix = suffix.replace(/^M(?!aj)/, 'm');
-      return `${root.toUpperCase()}${accidental === 'B' ? 'b' : accidental}${fixedSuffix}`;
-    });
+    return this.normalizeChordSymbol(symbol);
   },
 
   buildMovableChordShape(symbol) {
