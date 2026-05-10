@@ -57,6 +57,8 @@ const Battle = {
   songChordMeta: null,
   targetChord: null,
   detectedChordResult: null,
+  externalChordShapes: {},
+  chordShapeRequests: {},
 
   audioCtx: null,
   analyser: null,
@@ -169,14 +171,14 @@ const Battle = {
     this.matchHeld = 0;
     this.recentPlayedNotes = [];
 
-    this.setText('tgt-note', pick.symbol);
+    this.setText('tgt-note', this.formatChordSymbol(pick.symbol));
     this.setText('tgt-hz', `Play chord tones: ${pick.notes.join(' - ')}`);
     if (!this.detectedChordResult) this.setText('det-note', '-');
     this.setText('det-label', 'Chord');
     this.setText('cents-val', '-- cents');
     this.setNeedle(50);
     this.updateGuitarGuide();
-    this.setFeedback(`Target chord: ${pick.symbol}. Strum or pick its notes clearly.`);
+    this.setFeedback(`Target chord: ${this.formatChordSymbol(pick.symbol)}. Strum or pick its notes clearly.`);
   },
 
   nextSongChord() {
@@ -187,14 +189,14 @@ const Battle = {
     this.matchHeld = 0;
     this.recentPlayedNotes = [];
 
-    this.setText('tgt-note', pick.symbol);
+    this.setText('tgt-note', this.formatChordSymbol(pick.symbol));
     this.setText('tgt-hz', `Play chord tones: ${pick.notes.join(' - ')}`);
     if (!this.detectedChordResult) this.setText('det-note', '-');
     this.setText('det-label', 'Chord');
     this.setText('cents-val', '-- cents');
     this.setNeedle(50);
     this.updateGuitarGuide();
-    this.setFeedback(`Target chord: ${pick.symbol}. Strum or pick its notes clearly.`);
+    this.setFeedback(`Target chord: ${this.formatChordSymbol(pick.symbol)}. Strum or pick its notes clearly.`);
   },
 
   loadSongChords(chords, meta = {}) {
@@ -217,10 +219,13 @@ const Battle = {
     if (!guide) return;
 
     const label = this.targetChord
-      ? `${this.targetChord.symbol} chord shape`
+      ? `${this.formatChordSymbol(this.targetChord.symbol)} chord shape`
       : `${this.target.name}${this.target.octave} position`;
+    const localPositions = this.targetChord ? this.getLocalChordPositions(this.targetChord.symbol) : [];
+    const chordShape = this.targetChord && !localPositions.length ? this.getExternalChordShape(this.targetChord.symbol) : null;
+    const variation = chordShape && chordShape.variations && chordShape.variations[0];
     const positions = this.targetChord
-      ? this.getChordPositions(this.targetChord.symbol)
+      ? (localPositions.length ? localPositions : variation && variation.positions && variation.positions.length ? variation.positions : this.getChordPositions(this.targetChord.symbol))
       : this.notePositions[`${this.target.name}${this.target.octave}`] || [];
     const positionText = positions.length
       ? positions.map(pos => {
@@ -229,6 +234,13 @@ const Battle = {
         return `${stringInfo.label} string: ${fretText}`;
       }).join(' | ')
       : 'No shape saved for this target yet.';
+    const sourceText = chordShape
+      ? `Source: ${chordShape.source}`
+      : localPositions.length
+        ? 'Source: Local chord shape'
+        : this.targetChord
+        ? 'Loading All Guitar Chords shape...'
+        : '';
     const frets = this.getDisplayedFrets(positions);
 
     guide.innerHTML = `
@@ -237,7 +249,7 @@ const Battle = {
           <div class="slbl">Guitar Position</div>
           <div class="guitar-guide-title">${this.escapeHtml(label)}</div>
         </div>
-        <div class="guitar-guide-meta">${this.escapeHtml(positionText)}</div>
+        <div class="guitar-guide-meta">${this.escapeHtml(sourceText || positionText)}</div>
       </div>
       <div class="guitar-neck" aria-label="${this.escapeHtml(label)}">
         <div class="guitar-nut"></div>
@@ -248,14 +260,48 @@ const Battle = {
           .map(item => this.renderGuideString(item.stringInfo, item.index, positions, frets))
           .join('')}
       </div>
+      <div class="guitar-guide-meta">${this.escapeHtml(positionText)}</div>
     `;
+
+    if (this.targetChord && !localPositions.length && !chordShape) this.loadExternalChordShape(this.targetChord.symbol);
+  },
+
+  getLocalChordPositions(symbol) {
+    const clean = this.normalizeChordSymbol(symbol);
+    return this.chordShapes[clean]
+      || this.chordShapes[clean.replace(/[0-9]/g, '')]
+      || [];
+  },
+
+  getExternalChordShape(symbol) {
+    const shape = this.externalChordShapes[this.normalizeChordSymbol(symbol)];
+    return shape && !shape.failed ? shape : null;
+  },
+
+  async loadExternalChordShape(symbol) {
+    const clean = this.normalizeChordSymbol(symbol);
+    if (!clean || Object.prototype.hasOwnProperty.call(this.externalChordShapes, clean) || this.chordShapeRequests[clean]) return;
+
+    const apiBase = typeof App !== 'undefined' ? App.baseUrl : `${location.origin}/api`;
+    this.chordShapeRequests[clean] = true;
+    try {
+      const res = await fetch(`${apiBase}/chords/shape?symbol=${encodeURIComponent(symbol)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Chord shape lookup failed');
+      this.externalChordShapes[clean] = data;
+      if (this.targetChord && this.normalizeChordSymbol(this.targetChord.symbol) === clean) this.updateGuitarGuide();
+    } catch (err) {
+      console.warn('All Guitar Chords shape unavailable:', err);
+      this.externalChordShapes[clean] = { failed: true };
+    } finally {
+      delete this.chordShapeRequests[clean];
+    }
   },
 
   getChordPositions(symbol) {
     const clean = this.normalizeChordSymbol(symbol);
-    return this.chordShapes[clean]
-      || this.chordShapes[clean.replace(/[0-9]/g, '')]
-      || this.buildMovableChordShape(clean);
+    const localPositions = this.getLocalChordPositions(clean);
+    return localPositions.length ? localPositions : this.buildMovableChordShape(clean);
   },
 
   normalizeChordSymbol(symbol) {
@@ -267,6 +313,13 @@ const Battle = {
       .replace(/major/i, '')
       .replace(/^([A-G])B/, '$1b')
       .trim();
+  },
+
+  formatChordSymbol(symbol) {
+    const clean = this.normalizeChordSymbol(symbol);
+    return clean.replace(/^([A-Ga-g])([#b]?)(.*)$/, (_, root, accidental, suffix) => (
+      `${root.toUpperCase()}${accidental === 'B' ? 'b' : accidental}${suffix}`
+    ));
   },
 
   buildMovableChordShape(symbol) {

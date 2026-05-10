@@ -50,6 +50,8 @@ const FALLBACK_SONG_CHORDS = {
   'maroon-5/this-love': ['Cm', 'Fm', 'Bb', 'Eb', 'G7', 'Ab'],
   'maroon-five/this-love': ['Cm', 'Fm', 'Bb', 'Eb', 'G7', 'Ab']
 };
+const ALL_GUITAR_CHORDS_BASE = 'https://www.all-guitar-chords.com';
+const chordShapeCache = new Map();
 
 function auth(req, res, next) {
   const token = (req.headers.authorization || '').split(' ')[1];
@@ -199,7 +201,9 @@ function normalizeChordSymbol(symbol) {
     .replace(/\s+/g, '')
     .replace(/♯/g, '#')
     .replace(/♭/g, 'b')
-    .replace(/^([A-G])B/, '$1b')
+    .replace(/\u266f/g, '#')
+    .replace(/\u266d/g, 'b')
+    .replace(/^([A-Ga-g])B/, '$1b')
     .trim();
 }
 
@@ -226,6 +230,194 @@ function chordSymbolToNotes(symbol) {
 
   const names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   return [...new Set(intervals.map(interval => names[(rootPc + interval) % 12]))];
+}
+
+function htmlText(value) {
+  return String(value || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function allGuitarChordPath(symbol) {
+  const clean = normalizeChordSymbol(symbol);
+  const match = clean.match(/^([A-G](?:#|b)?)(.*)$/);
+  if (!match) throw new Error('Chord symbol is required');
+
+  const rootSlug = {
+    C: 'c',
+    'C#': 'c_sharp',
+    Db: 'c_sharp',
+    D: 'd',
+    'D#': 'd_sharp',
+    Eb: 'd_sharp',
+    E: 'e',
+    F: 'f',
+    'F#': 'f_sharp',
+    Gb: 'f_sharp',
+    G: 'g',
+    'G#': 'g_sharp',
+    Ab: 'g_sharp',
+    A: 'a',
+    'A#': 'a_sharp',
+    Bb: 'a_sharp',
+    B: 'b'
+  }[match[1]];
+  if (!rootSlug) throw new Error(`Unsupported chord root: ${match[1]}`);
+
+  const suffix = match[2].toLowerCase();
+  let typeSlug = 'major';
+  if (/^m(?!aj)/.test(suffix) && suffix.includes('maj9')) typeSlug = 'mmaj9';
+  else if (/^m(?!aj)/.test(suffix) && suffix.includes('maj7')) typeSlug = 'mmaj7';
+  else if (/^m(?!aj)/.test(suffix) && suffix.includes('13')) typeSlug = 'm13';
+  else if (/^m(?!aj)/.test(suffix) && suffix.includes('11')) typeSlug = 'm11';
+  else if (/^m(?!aj)/.test(suffix) && suffix.includes('9')) typeSlug = 'm9';
+  else if (/^m(?!aj)/.test(suffix) && suffix.includes('7b5')) typeSlug = 'm7b5';
+  else if (/^m(?!aj)/.test(suffix) && suffix.includes('7#5')) typeSlug = 'm7_sharp5';
+  else if (/^m(?!aj)/.test(suffix) && suffix.includes('7')) typeSlug = 'm7';
+  else if (/^m(?!aj)/.test(suffix) && suffix.includes('6')) typeSlug = 'm6';
+  else if (/^m(?!aj)|minor/.test(suffix)) typeSlug = 'minor';
+  else if (suffix.includes('maj13#11')) typeSlug = 'maj13_sharp11';
+  else if (suffix.includes('maj13')) typeSlug = 'maj13';
+  else if (suffix.includes('maj11')) typeSlug = 'maj11';
+  else if (suffix.includes('maj9#11')) typeSlug = 'maj9_sharp11';
+  else if (suffix.includes('maj9')) typeSlug = 'maj9';
+  else if (suffix.includes('maj7#5')) typeSlug = 'maj7_sharp5';
+  else if (suffix.includes('maj7b5')) typeSlug = 'maj7b5';
+  else if (suffix.includes('maj7')) typeSlug = 'maj7';
+  else if (suffix.includes('7sus4')) typeSlug = '7sus4';
+  else if (suffix.includes('sus2sus4')) typeSlug = 'sus2sus4';
+  else if (suffix.includes('sus2')) typeSlug = 'sus2';
+  else if (suffix.includes('sus4') || suffix.includes('sus')) typeSlug = 'sus4';
+  else if (suffix.includes('dim7')) typeSlug = 'dim7';
+  else if (suffix.includes('dim')) typeSlug = 'dim';
+  else if (suffix.includes('aug') || suffix.includes('+')) typeSlug = 'aug';
+  else if (suffix.includes('13#11')) typeSlug = '13_sharp11';
+  else if (suffix.includes('13b9')) typeSlug = '13b9';
+  else if (suffix.includes('13')) typeSlug = '13';
+  else if (suffix.includes('11b9')) typeSlug = '11b9';
+  else if (suffix.includes('11')) typeSlug = '11';
+  else if (suffix.includes('9b5')) typeSlug = '9b5';
+  else if (suffix.includes('9#5')) typeSlug = '9_sharp5';
+  else if (suffix.includes('9')) typeSlug = '9';
+  else if (suffix.includes('7b9')) typeSlug = '7b9';
+  else if (suffix.includes('7#9')) typeSlug = '7_sharp9';
+  else if (suffix.includes('7b5')) typeSlug = '7b5';
+  else if (suffix.includes('7#5')) typeSlug = '7_sharp5';
+  else if (suffix.includes('7')) typeSlug = '7';
+  else if (suffix.includes('6add9')) typeSlug = '6add9';
+  else if (suffix.includes('6')) typeSlug = '6';
+  else if (suffix.includes('5')) typeSlug = '5';
+
+  return `/chords/index/${rootSlug}/${typeSlug}`;
+}
+
+function guitarStringIndex(stringNumber) {
+  const num = Number(stringNumber);
+  return Number.isInteger(num) && num >= 1 && num <= 6 ? 6 - num : null;
+}
+
+function parseFingerInstruction(text) {
+  const finger = /\bindex\b/i.test(text) ? '1'
+    : /\bmiddle\b/i.test(text) ? '2'
+      : /\bring\b/i.test(text) ? '3'
+        : /\b(pinky|little)\b/i.test(text) ? '4'
+          : '1';
+  const fretMatch = text.match(/(\d+)(?:st|nd|rd|th)\s+fret/i);
+  const fret = fretMatch ? Number(fretMatch[1]) : null;
+  if (!fret) return [];
+
+  if (/barre/i.test(text)) {
+    let from = 1;
+    let to = 6;
+    const range = text.match(/(?:covering|from|over|across).*?(\d)(?:st|nd|rd|th)\s+to\s+(?:the\s+)?(\d)(?:st|nd|rd|th)\s+strings?/i);
+    if (range) {
+      from = Number(range[1]);
+      to = Number(range[2]);
+    } else if (!/all the strings/i.test(text) && /1st to the 5th strings/i.test(text)) {
+      from = 1;
+      to = 5;
+    }
+    const start = Math.min(from, to);
+    const end = Math.max(from, to);
+    return Array.from({ length: end - start + 1 }, (_, index) => ({
+      string: guitarStringIndex(start + index),
+      fret,
+      finger
+    })).filter(pos => pos.string !== null);
+  }
+
+  const stringMatch = text.match(/\((\d)(?:st|nd|rd|th)\)\s+string/i);
+  const string = stringMatch ? guitarStringIndex(stringMatch[1]) : null;
+  return string === null ? [] : [{ string, fret, finger }];
+}
+
+function parseAllGuitarChordPage(html, symbol, url) {
+  const notesMatch = String(html).match(/Notes:\s*<\/?[^>]*>\s*([^<\n]+)/i)
+    || htmlText(html).match(/Notes:\s*([A-G][A-G#b\-\s]*)/i);
+  const notes = notesMatch
+    ? notesMatch[1].split('-').map(note => note.trim()).filter(Boolean)
+    : chordSymbolToNotes(symbol);
+  const titleMatch = String(html).match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  const title = htmlText(titleMatch && titleMatch[1]) || `${symbol} guitar chord`;
+  const variations = [];
+
+  for (const match of String(html).matchAll(/<h2[^>]*>\s*Variation\s+(\d+)\s*<\/h2>([\s\S]*?)(?=<h2[^>]*>\s*(?:Variation\s+\d+|Other)|$)/gi)) {
+    const number = Number(match[1]);
+    const body = match[2];
+    const instructions = [...body.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
+      .map(item => htmlText(item[1]))
+      .filter(Boolean);
+    const positions = instructions.flatMap(parseFingerInstruction);
+    const imageMatch = body.match(/<img[^>]+src=(["'])(.*?)\1/i);
+    variations.push({
+      number,
+      positions,
+      instructions,
+      image: imageMatch ? new URL(imageMatch[2], ALL_GUITAR_CHORDS_BASE).href : null
+    });
+  }
+
+  return {
+    source: 'All Guitar Chords',
+    sourceUrl: url,
+    symbol,
+    title,
+    notes,
+    variations: variations.filter(variation => variation.positions.length || variation.instructions.length)
+  };
+}
+
+async function fetchAllGuitarChordShape(symbol) {
+  const pathName = allGuitarChordPath(symbol);
+  const url = `${ALL_GUITAR_CHORDS_BASE}${pathName}`;
+  const cacheKey = pathName.toLowerCase();
+  const cached = chordShapeCache.get(cacheKey);
+  if (cached && Date.now() - cached.savedAt < 1000 * 60 * 60 * 12) return cached.data;
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'text/html',
+      'User-Agent': 'MaaPahDeed/1.0 chord guide'
+    }
+  });
+  if (response.status === 404) {
+    const error = new Error('Chord shape not found on All Guitar Chords');
+    error.status = 404;
+    throw error;
+  }
+  if (!response.ok) throw new Error(`All Guitar Chords HTTP ${response.status}`);
+
+  const data = parseAllGuitarChordPage(await response.text(), symbol, url);
+  if (!data.variations.length) throw new Error('No chord variations found on All Guitar Chords');
+  chordShapeCache.set(cacheKey, { savedAt: Date.now(), data });
+  return data;
 }
 
 function extractSongMetadata(html) {
@@ -567,6 +759,77 @@ app.post('/api/chords/analyze', async (req, res) => {
   res.json({ source, externalApiError, inputNotes, matches });
 });
 
+app.get('/api/chords/shape', async (req, res) => {
+  try {
+    const symbol = String(req.query.symbol || '').trim();
+    if (!symbol) return res.status(400).json({ error: 'Chord symbol is required' });
+    res.json(await fetchAllGuitarChordShape(symbol));
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message || 'Chord shape lookup failed' });
+  }
+});
+
+app.post('/api/chords/analyze-audio', async (req, res) => {
+  const { noteHints = [] } = req.body;
+  const inputNotes = uniqueNotes(noteHints);
+  const hintMatches = inputNotes.length >= 2 ? scoreChords(inputNotes, LOCAL_CHORDS) : [];
+  let lvChordiaError = null;
+
+  if (req.body.audioWavBase64 || req.body.audioBase64) {
+    try {
+      const lvResult = await classifyWithLvChordia(req.body);
+      const rawChord = lvResult.rawChord || lvResult.chord || 'N';
+      const chordName = lvResult.chord || 'N';
+      const confidence = confidenceFromLvSegments(rawChord, lvResult.segments);
+
+      return res.json({
+        source: 'lv-chordia',
+        inputNotes,
+        matches: hintMatches,
+        segments: lvResult.segments || [],
+        device: lvResult.device,
+        elapsedSeconds: lvResult.elapsedSeconds,
+        chord: {
+          chord: chordName === 'N' ? 'No chord' : chordName,
+          rawChord,
+          confidence,
+          notes: chordName === 'N' ? [] : chordSymbolToNotes(chordName),
+          feedback: chordName === 'N'
+            ? 'lv-chordia did not find a stable chord in this recording.'
+            : `lv-chordia detected ${chordName}.`,
+          practiceTip: 'Strum once clearly and let the chord ring through the recording window.'
+        }
+      });
+    } catch (error) {
+      lvChordiaError = error.message;
+      console.warn('lv-chordia analysis failed:', error.message);
+    }
+  }
+
+  if (inputNotes.length < 2) {
+    return res.status(400).json({
+      error: lvChordiaError || 'Play 2-4 clear notes first',
+      inputNotes,
+      matches: hintMatches,
+      lvChordiaError
+    });
+  }
+
+  const bestMatch = hintMatches[0] || null;
+  res.json({
+    source: lvChordiaError ? 'Local chord analysis after lv-chordia error' : 'Local chord analysis',
+    lvChordiaError,
+    inputNotes,
+    matches: hintMatches,
+    chord: bestMatch ? {
+      chord: bestMatch.name,
+      confidence: bestMatch.confidence,
+      notes: bestMatch.notes,
+      feedback: 'Matched from detected notes.',
+      practiceTip: 'Pick each string clearly for a steadier chord match.'
+    } : null
+  });
+});
 app.get('/api/music/key-suggest', auth, (req, res) => {
   const notes = (req.query.notes || '').split(',').map(note => note.trim()).filter(Boolean);
   const scales = {

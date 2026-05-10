@@ -159,6 +159,17 @@ const App = {
     return this.token ? { ...extra, Authorization: `Bearer ${this.token}` } : extra;
   },
 
+  formatChordSymbol(symbol) {
+    return String(symbol || '')
+      .replace(/\s+/g, '')
+      .replace(/\u266f/g, '#')
+      .replace(/\u266d/g, 'b')
+      .replace(/^([A-Ga-g])B/, '$1b')
+      .replace(/^([A-Ga-g])([#b]?)(.*)$/, (_, root, accidental, suffix) => (
+        `${root.toUpperCase()}${accidental}${suffix}`
+      ));
+  },
+
   async searchMusic() {
     const artist = document.getElementById('song-artist').value.trim();
     const song = document.getElementById('song-title').value.trim();
@@ -197,7 +208,7 @@ const App = {
         <div class="chord-analysis-meta">${this.escapeHtml(data.artist)} - ${this.escapeHtml(data.chords.length)} chords loaded</div>
         <div class="chord-analysis-meta">Powered by E-Chords</div>
         ${sourceNote}
-        <div class="chord-analysis-meta">${data.chords.map(chord => this.escapeHtml(chord.symbol)).join(' - ')}</div>
+        <div class="chord-analysis-meta">${data.chords.map(chord => this.escapeHtml(this.formatChordSymbol(chord.symbol))).join(' - ')}</div>
       `;
       document.getElementById('song-save-btn')?.classList.remove('hidden');
       this.loadMusicDashboard();

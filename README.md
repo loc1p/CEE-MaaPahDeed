@@ -6,14 +6,14 @@ MaaPahDeed is a guitar learning web application built as a Computer Engineering 
 
 - User registration, login, session restore, and logout
 - Battle mode for guitar chord practice with local microphone-based chord hit detection
-- Guitar fretboard guide that shows chord finger positions
+- Guitar fretboard guide that shows chord finger positions, using local shapes first and All Guitar Chords when a shape is missing
 - Song Chord Quest that loads chords for real songs
 - Chord Cam using camera-based hand/gesture tracking
 - Saved Songs library with create, read, update, and delete behavior
 - Song Library Dashboard with recent songs, saved songs, and top searched songs
 - Light/Dark theme toggle with saved user preference
-- External API integration for song/chord lookup and music metadata
-- Chord readout that shows the latest successfully hit chord
+- External API integration for song/chord lookup, guitar chord shapes, and music metadata
+- Chord readout that shows the latest successfully hit chord, including flat chord names such as `Bb`
 
 ## Final Project Requirement Mapping
 
@@ -22,7 +22,7 @@ MaaPahDeed is a guitar learning web application built as a Computer Engineering 
 | Requirement | How MaaPahDeed Meets It |
 | --- | --- |
 | User Login | Users can register an account, log in, stay signed in across refreshes, and log out. Passwords are hashed in the backend. |
-| API Integration | The backend calls external music/chord APIs, including E-Chords/MusicBrainz-style song metadata lookup and chord lookup endpoints. API responses are used directly in Battle and Song Chord Quest. |
+| API Integration | The backend calls external music/chord APIs, including E-Chords/MusicBrainz-style song metadata lookup, All Guitar Chords guitar-shape lookup, and chord analysis endpoints. API responses are used directly in Battle, the fretboard guide, and Song Chord Quest. |
 | Deployed & Live | Add the public deployment URL after deployment. The app is designed to run as one public Render web service where Express serves both the API and static frontend. |
 
 ### Challenging Requirements
@@ -45,7 +45,7 @@ The challenging requirement score is capped at 20 points, so one Tier S feature 
 - Backend: Node.js, Express.js
 - Database: MongoDB with Mongoose
 - Authentication: JWT, bcryptjs
-- APIs / Libraries: E-Chords style chord lookup, MusicBrainz/Cover Art metadata lookup, Chords API fallback, MediaPipe Hands, MediaPipe Face Mesh, Web Audio API, Pitchy
+- APIs / Libraries: E-Chords style song chord lookup, All Guitar Chords shape lookup, MusicBrainz/Cover Art metadata lookup, Chords API fallback, lv-chordia, MediaPipe Hands, MediaPipe Face Mesh, Web Audio API, Pitchy
 - Deployment target: Render web service with MongoDB Atlas
 
 ## Project Structure
@@ -176,16 +176,18 @@ Deployment steps:
 
 ### Song / Music
 
-- `GET /api/music/song-chords?artist=<artist>&song=<song>`
+- `GET /api/music/chords?artist=<artist>&song=<song>`
 - `GET /api/music/library`
 - `POST /api/music/library`
 - `PATCH /api/music/library/:songKey`
 - `DELETE /api/music/library/:songKey`
-- `GET /api/music/top-searches`
+- `GET /api/music/charts/top-searches`
 
 ### Chords / Battle
 
 - `POST /api/chords/analyze`
+- `POST /api/chords/analyze-audio` - local chord matching from detected note hints
+- `GET /api/chords/shape?symbol=<chord>` - guitar chord shape lookup from All Guitar Chords when no local shape exists
 
 ### Other
 
@@ -217,6 +219,8 @@ Use this checklist for the final video:
 - Search for a real song in Song Chord Quest
 - Show the external API result being used as Battle chord targets
 - Play Battle mode and show the fretboard chord guide
+- Show that uncommon chords can load guitar positions from All Guitar Chords, while common local shapes still load instantly
+- Show a flat chord such as `Bb` displaying correctly
 - Hit a target chord and show the latest hit chord in the Chord readout
 - Open Chord Cam and show camera-based interaction
 - Save a song
