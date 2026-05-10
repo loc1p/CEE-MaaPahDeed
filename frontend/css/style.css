@@ -427,7 +427,7 @@ body.theme-light #login-overlay {
 }
 
 .target-display {
-  font-family: 'Cinzel Decorative', serif;
+  font-family: 'Cinzel', serif;
   font-size: clamp(3.8rem, 8vw, 6rem);
   color: var(--gold);
   line-height: 1;
@@ -435,14 +435,16 @@ body.theme-light #login-overlay {
   text-shadow: 0 0 30px var(--gold);
   margin: .7rem 0;
   display: block;
+  text-transform: none;
 }
 
 .det-display {
-  font-family: 'Cinzel Decorative', serif;
+  font-family: 'Cinzel', serif;
   font-size: 3.4rem;
   min-width: 100px;
   text-align: center;
   color: #f4e7ba;
+  text-transform: none;
 }
 
 .det-display.matched {
@@ -1490,12 +1492,13 @@ body.theme-light .song-chart-label {
 
 /* Target Note */
 .target-display {
-  font-family: 'Cinzel Decorative';
+  font-family: 'Cinzel', serif;
   font-size: 5.5rem;
   color: var(--gold);
   text-shadow: 0 0 25px var(--gold);
   line-height: 1;
   margin: 1rem 0;
+  text-transform: none;
 }
 
 #menu-battle {
@@ -1540,7 +1543,8 @@ body.theme-light .song-chart-label {
 
 #menu-battle .target-display,
 #menu-battle .det-display {
-  font-family: 'Cinzel Decorative', serif;
+  font-family: 'Cinzel', serif;
+  font-variant: normal;
   letter-spacing: 0;
   text-transform: none;
 }
@@ -1550,6 +1554,7 @@ body.theme-light .song-chart-label {
 #menu-battle .chord-analysis-title {
   font-size: 1.08rem;
   color: #ead08a;
+  text-transform: none;
 }
 
 #menu-battle .monster-lore,
@@ -1876,12 +1881,13 @@ body.theme-light #menu-battle .auth-input::placeholder {
   backdrop-filter: blur(6px);
 }
 .cc-current-chord {
-  font-family: 'Cinzel Decorative', serif;
+  font-family: 'Cinzel', serif;
   font-size: 5rem;
   line-height: 1;
   color: var(--gold);
   text-shadow: 0 0 20px rgba(212,175,55,1), 0 0 50px rgba(212,175,55,.5);
   animation: goldPulse 3s ease-in-out infinite;
+  text-transform: none;
 }
 .cc-chord-hint {
   font-family: 'Cormorant Garamond', serif;
@@ -1921,6 +1927,7 @@ body.theme-light #menu-battle .auth-input::placeholder {
   padding: .28rem .55rem;
   border: 1px solid var(--border-dim);
   color: #6a5590;
+  text-transform: none;
 }
 .cc-pill.on { color: #050310; background: var(--gold); border-color: var(--gold); box-shadow: 0 0 15px rgba(212,175,55,.35); }
 .cc-pill.blue { color: #001014; background: var(--neon-blue); border-color: var(--neon-blue); box-shadow: 0 0 12px rgba(0,207,255,.45); }
