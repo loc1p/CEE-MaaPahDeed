@@ -13,11 +13,3 @@ services:
         generateValue: true
       - key: MONGO_URI
         sync: false
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: OPENAI_MODEL
-        value: gpt-4.1-mini
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: GEMINI_MODEL
-        value: gemini-2.5-flash
