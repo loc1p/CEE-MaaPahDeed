@@ -46,7 +46,7 @@ https://project-5101d58b-03f9-4d7e-a71.web.app/
 
 ## Backend URL
 
-http://maapahdeed-8597.onrender.com/api
+https://maapahdeed-8597.onrender.com/api
 
 ## GitHub URL
 

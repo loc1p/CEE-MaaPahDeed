@@ -71,12 +71,12 @@ Requirement ต่อมาคือ API Integration แอปนี้เชื
 
 Requirement ที่สามคือ Deployed and Live แอปนี้เปิดได้จาก public URL ไม่ใช่แค่ localhost ตอน demo จะเปิดเว็บจากลิงก์ deploy จริงเพื่อยืนยันว่าใช้งานออนไลน์ได้
 
-ลิงก์ live ของโปรเจกต์คือ `https://project-5101d58b-03f9-4d7e-a71.web.app/` ซึ่งเป็น frontend ที่ deploy บน Firebase Hosting และ backend API อยู่ที่ `http://maapahdeed-8597.onrender.com/api`
+ลิงก์ live ของโปรเจกต์คือ `https://project-5101d58b-03f9-4d7e-a71.web.app/` ซึ่งเป็น frontend ที่ deploy บน Firebase Hosting และ backend API อยู่ที่ `https://maapahdeed-8597.onrender.com/api`
 
 โชว์:
 
 - แถบ address bar ที่เป็น public Firebase URL
-- เปิด `http://maapahdeed-8597.onrender.com/api/health` สั้นๆ เพื่อโชว์ว่า backend ทำงาน
+- เปิด `https://maapahdeed-8597.onrender.com/api/health` สั้นๆ เพื่อโชว์ว่า backend ทำงาน
 - Refresh หน้าเว็บ
 - ใช้งาน feature สั้นๆ ให้เห็นว่าเว็บทำงานจริง
 

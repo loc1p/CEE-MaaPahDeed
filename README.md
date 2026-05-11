@@ -153,8 +153,8 @@ The public demo uses Firebase Hosting for the static frontend and Render for the
 
 ```text
 Live URL: https://project-5101d58b-03f9-4d7e-a71.web.app/
-Backend URL: http://maapahdeed-8597.onrender.com/api
-Health Check: http://maapahdeed-8597.onrender.com/api/health
+Backend URL: https://maapahdeed-8597.onrender.com/api
+Health Check: https://maapahdeed-8597.onrender.com/api/health
 ```
 
 Frontend deployment steps:
@@ -215,7 +215,7 @@ Recommended deployment:
 Current public links:
 
 - Live URL: https://project-5101d58b-03f9-4d7e-a71.web.app/
-- Backend URL: http://maapahdeed-8597.onrender.com/api
+- Backend URL: https://maapahdeed-8597.onrender.com/api
 - GitHub URL: https://github.com/loc1p/CEE-MaaPahDeed
 
 Deployment status: Firebase Hosting has been updated from the current `main` codebase.
@@ -253,5 +253,5 @@ Use this checklist for the final video:
 
 - GitHub: https://github.com/loc1p/CEE-MaaPahDeed
 - Live URL: https://project-5101d58b-03f9-4d7e-a71.web.app/
-- Backend URL: http://maapahdeed-8597.onrender.com/api
+- Backend URL: https://maapahdeed-8597.onrender.com/api
 - Video URL: TODO
