@@ -890,7 +890,11 @@ app.get('/api/music/key-suggest', auth, (req, res) => {
   res.json({ suggestions });
 });
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (req, res) => res.json({
+  status: 'ok',
+  service: 'maapahdeed-backend',
+  features: ['song-chords', 'chord-shapes']
+}));
 
 app.use((error, req, res, next) => {
   if (res.headersSent) return next(error);
